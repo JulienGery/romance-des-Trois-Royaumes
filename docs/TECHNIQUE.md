@@ -37,6 +37,10 @@ DEEPL_API_KEY=... python3 fr_patch/translate_deepl.py --lang en --glossary trans
 python3 fr_patch/patch_rom.py ORIGINAL.cci ANGLAIS.cxi --lang en --cci ANGLAIS.cci
 fr_patch/make_release.sh ORIGINAL.cci sortie en            # patch xdelta YokaiWatchSangokushi-EN.xdelta
 ```
+**Pipeline automatique** : `DEEPL_API_KEY=... fr_patch/build_language.sh en ORIGINAL.cci sortie [ja|fr]` enchaîne noms officiels des Yo-kai, traduction DeepL (reprenable, s'arrête proprement quand le quota est épuisé), application des noms, contrôle de qualité et patch xdelta.
+
+**Noms officiels des Yo-kai** : `fr_patch/yokai_names.py` récupère les noms anglais officiels sur le [Yo-kai Watch Wiki](https://yokaiwatch.fandom.com) (texte sous licence CC BY-SA ; 2 781 paires japonais/anglais dans `translations/yokai_names_en.tsv`). `fr_patch/apply_names.py` les applique : les lignes de la table des noms du jeu (celle qu'utilisent les variables `【Yk…】`) reçoivent le nom officiel, et dans les phrases le rendu automatique d'un nom est remplacé quand le japonais de la phrase le contient. Les Yo-kai propres à *Sangokushi* n'ont pas de nom officiel : ils restent traduits par DeepL.
+
 Les balises du jeu (couleurs, noms de variables) sont protégées et contrôlées une à une ; en cas de perte, le texte est retraduit morceau par morceau. Environ 20 500 textes uniques (≈ 390 000 caractères) : le forfait gratuit de DeepL (500 000 caractères par mois) suffit. La clé d'API reste dans l'environnement, jamais dans le dépôt. Les traductions sont mises en cache (`translations/<langue>/.cache.json`), l'exécution est reprenable. Une relecture humaine reste nécessaire.
 
 ## Mentions
