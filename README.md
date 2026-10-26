@@ -1,42 +1,67 @@
-# Romance des Trois Royaumes — traduction française de *Yo-kai Watch Sangokushi* (3DS)
+# Romance des Trois Royaumes — Yo-kai Watch Sangokushi en français
 
-## Installer le patch (sans rien compiler)
-1. Télécharger `YokaiWatchSangokushi-FR.xdelta` (≈ 4 Mo) dans la section **Releases**.
-2. Avoir **son propre dump déchiffré** de la version japonaise, au format `.cci`, **non chiffré** (lisible par `3dstool`/`ctrtool` sans clés). Le patch ne s'applique qu'à ce dump exact : **SHA-256 attendu** `8776733296fb2f984e86102c834693b952aeae62789b4a584320c4fec359a453`.
-3. L'appliquer avec n'importe quel outil xdelta (GUI : *Delta Patcher*, *xdelta UI* ; ligne de commande ci-dessous) :
-   ```bash
-   xdelta3 -d -s yokai-sangokushi.cci YokaiWatchSangokushi-FR.xdelta yokai-sangokushi-FR.cci
-   ```
-   Le résultat doit avoir le SHA-256 `4a365b26600df577214bb0a950a573e4459731050f982c7fbcb9efd34d6dbbd6`.
-4. Lancer `yokai-sangokushi-FR.cci` dans un émulateur (testé : Azahar avec le CXI équivalent, Zakuro avec ce CCI). Sur console : conversion en CIA et signature patchée nécessaires (non testé).
+**Le jeu de stratégie Yo-kai Watch inspiré des Trois Royaumes, enfin jouable en français.**
 
-Le patch ne contient que les différences avec le dump d'origine (aucune ROM complète). Pour le reconstruire soi-même : `fr_patch/make_release.sh ORIGINAL.cci dossier_de_sortie`.
+*Yo-kai Watch Sangokushi* (3DS, LEVEL-5) n'est jamais sorti hors du Japon. Ici, on retrouve USApyon en stratège, des Yo-kai en armure, des batailles au tour par tour pour étendre son territoire… et tout est maintenant lisible : dialogues, bulles, menus, tutoriels, bannières, sous-titres de cinématiques.
 
-Patch de traduction française pour **Yo-kai Watch Sangokushi** (titre `000400000018B000`, version japonaise). Pour compiler soi-même : une seule commande transforme **votre dump déchiffré** de la ROM japonaise en un CXI français :
+![Tutoriel en français](docs/images/01-tutoriel.jpg)
 
-```bash
-python3 fr_patch/patch_rom.py ORIGINAL.cci FRANCAIS.cxi --verify
-```
+## Ce que vous obtenez
 
-Ce dépôt **ne contient aucune donnée du jeu** (ni ROM, ni exécutable, ni police) : il faut fournir votre propre dump.
+- **Les 1 308 scripts du jeu traduits** : histoire, dialogues, tutoriels, objectifs, messages système.
+- **Une police française complète** : accents, `« »`, `œ`, apostrophes… avec chasse variable, donc un texte propre et pas de lettres espacées comme dans une police japonaise.
+- **Un moteur de texte adapté** : retours à la ligne automatiques, équilibrage des lignes, fenêtres et bulles ajustées à la longueur du français.
+- **Ça ressemble à un vrai jeu français** : les captures ci-dessous sont des captures réelles du jeu patché.
 
-## Ce que fait le patch
-- **Textes** : les 1 308 scripts traduits (projet [SangoKuro](https://github.com/JulienGery/SangoKuro), TSV) sont recompilés dans `LINKDATA_A.BIN`.
-- **Police française** à chasse variable (accents, `« »`, `œ`…), ajoutée à l'atlas de police du jeu. L'atlas est **fourni pré-construit** dans `fr_patch/atlas/` (aucune police source à extraire). Pour le régénérer (nouveaux caractères dans la traduction) : placer les polices de Yo-kai Watch 2 `polices/ft_sml.xf` et `ft_nrm.xf`, installer `dotnet`, construire `polices/Level5FontAtlas`, puis `UPDATE_ATLAS=1 sh fr_patch/build_all.sh` ; sans ces polices, `check_atlas.py` vérifie que l'atlas fourni couvre tous les caractères de la traduction.
-- **Moteur de texte natif ARM** (`overrides/`, `fr_arm/`) : avance variable, retour à la ligne français avec reflow et équilibrage, adaptation des fenêtres, bulles (dialogue et combat), textes centrés et bannières. Le code C est compilé pour l'ARM11 (`arm-none-eabi-gcc`, Thumb/ARM), placé dans du code mort de l'exécutable, et accroché par des branchements (`fr_patch/build_arm_native.py`). Aucune bibliothèque recompilée n'est nécessaire.
+![Cinématique](docs/images/02-cinematique.jpg)
+![Dialogue avec USApyon](docs/images/04-dialogue.jpg)
+![Carte et annonces](docs/images/05-carte.jpg)
+![Objectifs de combat](docs/images/06-combat.jpg)
+![Passer une scène](docs/images/03-confirmation.jpg)
 
-Détails techniques, faits vérifiés et limites : [`rapport/JOURNAL_MODIFICATIONS.md`](rapport/JOURNAL_MODIFICATIONS.md) (spécification de chaque modification), [`rapport/HANDOVER.md`](rapport/HANDOVER.md) (état du projet, commandes, pièges).
+## Avertissements — à lire avant de jouer
 
-## Prérequis
-- Python 3, `arm-none-eabi-gcc/ld/objcopy/nm` (`dotnet` seulement pour régénérer l'atlas de police).
-- [`3dstool`](https://github.com/dnasdw/3dstool) et [`ctrtool`](https://github.com/3DSGuy/Project_CTR) à la racine du dépôt (binaires non fournis).
-- À côté de `fr_patch/` : les dépôts [`SangoKuro`](https://github.com/JulienGery/SangoKuro) et [`LINKDATA-explorer`](https://github.com/JulienGery/LINKDATA-explorer). Les modifications apportées à SangoKuro (générateurs + TSV) sont fournies sous forme de patch : `cd SangoKuro && git apply ../patches/SangoKuro-fr.patch`.
-- Une ROM **déchiffrée** (`.cci`/`.3ds`/`.cxi`).
+### Les textures ne sont pas traduites
+Seul le **texte** est en français. Les images du jeu (titres de lieux (le nom du magasin ci-dessus par exemple), boutons « SKIP » / « はい / いいえ », en-têtes « 残り時間 » ou « 目的 », enseignes, noms au-dessus des personnages…) restent en japonais. Les traduire demande de redessiner des textures, et je n'ai pas les compétences artistiques pour le faire. Si vous savez dessiner et que ça vous tente, les contributions sont les bienvenues !
 
-## Utilisation et état
-Le CXI produit démarre dans Zakuro (`--interpreter`) et dans Azahar ; textes, bulles de combat, bannières et écrans d'introduction ont été vérifiés visuellement dans l'émulateur. **Pas testé sur une vraie console** : le CXI n'est pas signé et l'exheader est modifié (`.bss` agrandi), il faut le convertir en CIA et l'installer avec des patchs de signature.
+### Le jeu peut planter à tout moment
+Ce patch modifie le code de l'exécutable (moteur de texte en ARM natif, placé dans du code que j'ai jugé inutilisé). Je n'ai eu **aucun plantage** pendant mes tests, mais je ne peux pas garantir que toutes les parties du jeu ont été couvertes.
 
-Outils de développement (nécessitent la décompilation Ghidra du jeu, non fournie) : `fr_patch/dead_code.py`, `cavity_search.py`, `cavity_update.py`, `make_trap_rom.sh` (recherche et vérification du code mort réutilisé comme cavité). Le résultat est versionné dans `fr_patch/cavities.json`.
+- **Sauvegardez très souvent**, et gardez plusieurs fichiers de sauvegarde (ou des états de sauvegarde d'émulateur).
+- **Si le jeu plante**, c'est peut-être parce que le patch a supprimé une fonction qui était en réalité utilisée. **Prévenez-moi** en ouvrant une [issue](https://github.com/JulienGery/romance-des-Trois-Royaumes/issues) avec : l'endroit du jeu, ce que vous faisiez juste avant, l'émulateur utilisé et si possible le log. Je pourrai corriger le patch.
+
+## Installation (avec le patch xdelta)
+
+Aucun outil à installer : tout se fait dans le navigateur.
+
+**Il vous faut :**
+- votre **propre dump déchiffré** de la version japonaise du jeu (titre `000400000018B000`), au format `.cci`. Le patch ne fonctionne que sur ce dump exact, dont le SHA-256 est :
+  `8776733296fb2f984e86102c834693b952aeae62789b4a584320c4fec359a453`
+- le fichier **`YokaiWatchSangokushi-FR.xdelta`** (≈ 4 Mo), à télécharger dans la section [**Releases**](https://github.com/JulienGery/romance-des-Trois-Royaumes/releases).
+
+**Étapes :**
+1. Ouvrez **<https://kotcrab.github.io/xdelta-wasm/>** (xdelta dans le navigateur, rien n'est envoyé sur Internet : les fichiers restent sur votre machine).
+2. **Source file** : choisissez votre dump japonais `.cci`.
+3. **Patch file** : choisissez `YokaiWatchSangokushi-FR.xdelta`.
+4. Lancez l'application du patch et téléchargez le fichier obtenu (≈ 860 Mo : prévoyez un peu de patience et de mémoire vive).
+5. *(Optionnel)* vérifiez que le SHA-256 du résultat est `4a365b26600df577214bb0a950a573e4459731050f982c7fbcb9efd34d6dbbd6`.
+6. Lancez le `.cci` obtenu dans votre émulateur.
+
+Si le patch est refusé, c'est que votre dump n'est pas identique à celui attendu (vérifiez son SHA-256, il doit aussi être déchiffré).
+
+### Où jouer ?
+- ✅ **Émulateur** : testé avec **Zakuro** (avec ce `.cci`) et **Azahar** (avec le `.cxi` équivalent).
+- ❓ **Console réelle** : non testé. Le fichier n'est pas signé et l'exheader est modifié ; il faudrait le convertir en CIA et utiliser des patchs de signature.
+
+## Contribuer / signaler un problème
+
+- Un texte mal traduit, une fenêtre qui déborde, un mot coupé bizarrement : ouvrez une [issue](https://github.com/JulienGery/romance-des-Trois-Royaumes/issues) avec une capture.
+- Un plantage : voir plus haut, c'est le cas le plus utile à me signaler.
+
+## Pour les développeurs
+
+Compiler le patch soi-même, détails du moteur ARM, de la police et des outils : [docs/TECHNIQUE.md](docs/TECHNIQUE.md). Spécifications et état du projet : [`rapport/HANDOVER.md`](rapport/HANDOVER.md) et [`rapport/JOURNAL_MODIFICATIONS.md`](rapport/JOURNAL_MODIFICATIONS.md).
 
 ## Mentions
-Projet de fan non officiel. *Yo-kai Watch* est une marque de LEVEL-5. Aucune donnée du jeu n'est incluse, **à une exception près** : l'atlas de police pré-construit (`fr_patch/atlas/`) contient des glyphes dérivés des polices de Yo-kai Watch 2 (LEVEL-5), fournis pour éviter à chacun d'extraire ces polices ; à retirer si le détenteur des droits le demande. `polices/Level5FontAtlas` est dérivé de [Kuriimu2](https://github.com/FanTranslatorsInternational/Kuriimu2) et reste sous **GPL-3.0** (voir `polices/Level5FontAtlas/NOTICE.md` et `LICENSE`). Aucune licence n'a encore été choisie pour le reste du code de ce dépôt.
+
+Projet de fan non officiel, sans but lucratif. *Yo-kai Watch* est une marque de LEVEL-5. Ce dépôt ne contient aucune ROM ni donnée du jeu, à une exception près : l'atlas de police pré-construit (`fr_patch/atlas/`) contient des glyphes dérivés des polices de Yo-kai Watch 2 (LEVEL-5), à retirer si le détenteur des droits le demande. `polices/Level5FontAtlas` est dérivé de [Kuriimu2](https://github.com/FanTranslatorsInternational/Kuriimu2) et reste sous **GPL-3.0**. Aucune licence n'a encore été choisie pour le reste du code.
