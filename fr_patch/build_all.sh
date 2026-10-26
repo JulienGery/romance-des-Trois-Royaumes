@@ -2,11 +2,19 @@
 # Rebuild the patched ROM from scratch. Needs: dotnet, ../3dstool, ../ctrtool, rom_work/romfs_dir (see PLAN).
 set -e
 cd "$(dirname "$0")"
-EXTRA="$(python3 -I charset_from_translations.py)"
-DN=../polices/Level5FontAtlas/bin/Debug/net10.0/Level5FontAtlas.dll
-for f in sml nrm; do dotnet $DN ../polices/ft_$f.xf build/atlas_$f --chars "$EXTRA" | head -1; done
-python3 -I bake_french_atlas.py build/atlas_sml --name sml --cell 16 --cellh 16
-python3 -I bake_french_atlas.py build/atlas_nrm --name nrm --cell 16 --cellh 18
+if [ -f ../polices/ft_sml.xf ] && [ -f ../polices/ft_nrm.xf ]; then
+  # regenerate the French atlas from the Yo-kai Watch 2 fonts (needs dotnet); UPDATE_ATLAS=1 also refreshes the prebuilt copy in atlas/
+  EXTRA="$(python3 -I charset_from_translations.py)"
+  DN=../polices/Level5FontAtlas/bin/Debug/net10.0/Level5FontAtlas.dll
+  for f in sml nrm; do dotnet $DN ../polices/ft_$f.xf build/atlas_$f --chars "$EXTRA" | head -1; done
+  python3 -I bake_french_atlas.py build/atlas_sml --name sml --cell 16 --cellh 16
+  python3 -I bake_french_atlas.py build/atlas_nrm --name nrm --cell 16 --cellh 18
+  if [ -n "$UPDATE_ATLAS" ]; then cp build/page_*.alpha build/page_*.png build/glyphs_*.json build/font_*.h atlas/; fi
+else
+  # no source fonts: use the prebuilt atlas shipped in atlas/
+  python3 -I check_atlas.py
+  mkdir -p build && cp atlas/page_*.alpha atlas/page_*.png atlas/glyphs_*.json atlas/font_*.h build/
+fi
 cp build/font_sml.h ../overrides/font_sml.h
 python3 -I make_entry0.py ../rom_work/entry0/entry0.g1t build/entry0_fr.g1t
 python3 -I lint_translation.py --strict | head -3

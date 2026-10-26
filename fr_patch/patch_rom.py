@@ -9,7 +9,7 @@ Output is a CXI that needs no emulator support: French text data (scripts, font 
 and, once converted to a CIA (makerom) and installed with signature patches, on a modded console.
 
 Stages: extract -> French font atlas -> translated scripts into LINKDATA_A.BIN -> ARM code (cavities + hooks + bss) -> repack.
-Needs (all in the repository or on PATH): 3dstool, ctrtool, python3, dotnet (font atlas), arm-none-eabi-gcc/ld/objcopy/nm."""
+Needs: 3dstool, ctrtool, python3, arm-none-eabi-gcc/ld/objcopy/nm (dotnet + polices/ft_*.xf only to regenerate the font atlas; a prebuilt one is in fr_patch/atlas)."""
 import argparse, hashlib, os, re, shutil, struct, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE); RW = os.path.join(ROOT, 'rom_work')
 TITLE = '000400000018b000'
@@ -49,7 +49,8 @@ def main():
     ap.add_argument('--verify', action='store_true', help='boot the result in zakuro --interpreter (pure ARM, no recompiled library)')
     ap.add_argument('--skip-extract', action='store_true', help='reuse rom_work/ from a previous run')
     a = ap.parse_args()
-    for t in ('3dstool', 'ctrtool', 'dotnet', 'arm-none-eabi-gcc', 'arm-none-eabi-ld', 'arm-none-eabi-objcopy', 'arm-none-eabi-nm'): need(t)
+    for t in ('3dstool', 'ctrtool', 'arm-none-eabi-gcc', 'arm-none-eabi-ld', 'arm-none-eabi-objcopy', 'arm-none-eabi-nm'): need(t)
+    if os.path.exists(os.path.join(ROOT, 'polices', 'ft_sml.xf')): need('dotnet')          # only to regenerate the atlas; a prebuilt one is in fr_patch/atlas
     if not a.skip_extract: extract(os.path.abspath(a.rom))
     run(['sh', os.path.join(HERE, 'build_all.sh')], stdout=subprocess.DEVNULL)          # atlas + translated LINKDATA + romfs_fr.bin
     run(['sh', os.path.join(HERE, 'build_arm_rom.sh')])                                # native ARM code + exheader + game_arm.cxi
@@ -57,6 +58,7 @@ def main():
     h = hashlib.sha256(open(a.out, 'rb').read()).hexdigest()
     print(f'\nwritten {a.out} ({os.path.getsize(a.out) // 2**20} MiB, sha256 {h[:16]}...)')
     if a.verify:
+        shutil.rmtree(os.path.join(RW, 'verify_data'), ignore_errors=True)          # fresh save data: comparable numbers
         r = subprocess.run(['zakuro', a.out, '--interpreter', '--headless', '1500', '--mute', '--rasterizer', 'software', '--data', os.path.join(RW, 'verify_data')],
                            capture_output=True, text=True)
         m = re.search(r'(\d+) threads .*?(\d+) draws', r.stdout + r.stderr)
