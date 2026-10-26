@@ -1,0 +1,21 @@
+#!/bin/sh
+# Rebuild the patched ROM from scratch. Needs: dotnet, ../3dstool, ../ctrtool, rom_work/romfs_dir (see PLAN).
+set -e
+cd "$(dirname "$0")"
+EXTRA="$(python3 -I charset_from_translations.py)"
+DN=../polices/Level5FontAtlas/bin/Debug/net10.0/Level5FontAtlas.dll
+for f in sml nrm; do dotnet $DN ../polices/ft_$f.xf build/atlas_$f --chars "$EXTRA" | head -1; done
+python3 -I bake_french_atlas.py build/atlas_sml --name sml --cell 16 --cellh 16
+python3 -I bake_french_atlas.py build/atlas_nrm --name nrm --cell 16 --cellh 18
+cp build/font_sml.h ../overrides/font_sml.h
+python3 -I make_entry0.py ../rom_work/entry0/entry0.g1t build/entry0_fr.g1t
+python3 -I lint_translation.py --strict | head -3
+python3 -I apply_translation.py build ../rom_work/romfs_dir/Data/LINKDATA_A.BIN build/LINKDATA_A.BIN
+cd ../rom_work
+rm -rf romfs_dir_fr && cp -Rc romfs_dir romfs_dir_fr
+cp ../fr_patch/build/LINKDATA_A.BIN romfs_dir_fr/Data/LINKDATA_A.BIN
+find romfs_dir_fr -name .DS_Store -delete
+../3dstool -cvtf romfs romfs_fr.bin --romfs-dir romfs_dir_fr >/dev/null
+../3dstool -cvtf cxi game_fr.cxi --header header.bin --exh exheader.bin --logo logo.bin --plain plain.bin --exefs exefs.bin --romfs romfs_fr.bin --not-encrypt >/dev/null
+../ctrtool game_fr.cxi 2>&1 | grep -E "Crypto Key|Title id"
+echo "OK -> rom_work/game_fr.cxi"

@@ -1,0 +1,818 @@
+diff --git a/Sangokushi-GenerateTranslatedFiles.py b/Sangokushi-GenerateTranslatedFiles.py
+index faa5051..bb49ec6 100644
+--- a/Sangokushi-GenerateTranslatedFiles.py
++++ b/Sangokushi-GenerateTranslatedFiles.py
+@@ -15,9 +15,12 @@ def process_dialogue_string(text_str):
+     if text_str == 'NULL':
+         return b'\x00'
+     text_str = text_str.replace('\\n', '\n')
+-    text_str = text_str.replace("'", '\u00b4')   # replace apostrophe with acute accent
+-    text_str = text_str.replace('...', '\u2026') # replace triple-dots with ellipses
+-    text_str = text_str.replace('"', '\u2033')   # replace double quotes with double prime
++    if os.environ.get('SANGO_LEGACY_QUOTES') == '1':
++        # old Japanese font had no ASCII ' and " glyphs: substitute look-alikes
++        text_str = text_str.replace("'", '\u00b4')
++        text_str = text_str.replace('"', '\u2033')
++    # the French font (textures 6/7 of LINKDATA entry 0, see fr_patch/) has ' " and the ellipsis
++    text_str = text_str.replace('...', '\u2026')
+     return text_str.encode('utf-8') + b'\x00'
+ 
+ def read_tsv_grouped(tsv_path):
+@@ -96,11 +99,14 @@ def type2recompile(out_dir):
+         header = struct.pack("<I", num_entries)
+         curr_offset = 4 + num_entries * 8
+         entry_headers = b''
++        padded_bodies = []
+         for body in entry_bodies:
+             entry_headers += struct.pack("<2I", curr_offset, len(body))
+-            curr_offset += len(body)
++            padded = body + b'\x00' * ((-len(body)) % 4)      # original files keep every entry 4-byte aligned
++            padded_bodies.append(padded)
++            curr_offset += len(padded)
+ 
+-        full_content = header + entry_headers + b''.join(entry_bodies)
++        full_content = header + entry_headers + b''.join(padded_bodies)
+         out_path = os.path.join(out_dir, filename)
+         with open(out_path, 'wb') as fo:
+             fo.write(full_content)
+@@ -118,23 +124,21 @@ def type3recompile(out_dir):
+             dialogue_str = text[18:] if len(text) > 18 else ''
+             tempy = process_dialogue_string(dialogue_str)
+             prefix_bytes = binascii.unhexlify(hex_prefix)
+-            strings.append(pad(prefix_bytes + tempy))
++            s4 = prefix_bytes + tempy
++            strings.append(s4 + b'\x00' * ((-len(s4)) % 4))      # original Type 3 files: strings 4-byte aligned, no 16-byte padding
+ 
+         num_strings = len(strings)
+         file_table = b'\x62\x29\x00\x00' + struct.pack("<I", num_strings)
+-        table_size = (num_strings * 4) + 8
+-        rem = table_size % 16
+-        data_offset = table_size + (16 - rem if rem != 0 else 0)
++        data_offset = (num_strings * 4) + 8                      # offset table directly followed by the strings
+ 
+         for s in strings:
+             file_table += struct.pack("<I", data_offset)
+             data_offset += len(s)
+ 
+-        rem_table = len(file_table) % 16
+-        if rem_table != 0:
+-            file_table += b"\x00" * (16 - rem_table)
+-
+-        full_content = file_table + b''.join(strings)
++        body = b''.join(strings)
++        if strings:                                              # the last string of an original file is not padded
++            last = strings[-1]; body = body[:len(body) - len(last)] + last.rstrip(b'\x00') + b'\x00'
++        full_content = file_table + body
+         out_path = os.path.join(out_dir, filename)
+         with open(out_path, 'wb') as fo:
+             fo.write(full_content)
+@@ -169,11 +173,12 @@ def type4recompile(out_dir):
+ 
+         e0_offset = 20 # 4 bytes entry count + 2 entries * 8 bytes
+         e0_size = len(e0_full)
+-        e1_offset = e0_offset + e0_size
++        e0_pad = b'\x00' * ((-e0_size) % 4)                  # original files keep entry 1 4-byte aligned
++        e1_offset = e0_offset + e0_size + len(e0_pad)
+         e1_size = len(entry1_data)
+ 
+         header = struct.pack("<I", 2) + struct.pack("<2I", e0_offset, e0_size) + struct.pack("<2I", e1_offset, e1_size)
+-        full_content = header + e0_full + entry1_data
++        full_content = header + e0_full + e0_pad + entry1_data
+ 
+         out_path = os.path.join(out_dir, filename)
+         with open(out_path, 'wb') as fo:
+diff --git a/Sangokushi-Pipeline.py b/Sangokushi-Pipeline.py
+index fdef308..08c0a6c 100644
+--- a/Sangokushi-Pipeline.py
++++ b/Sangokushi-Pipeline.py
+@@ -153,9 +153,12 @@ def _process_dialogue_string(text_str):
+     if text_str == 'NULL':
+         return b'\x00'
+     text_str = text_str.replace('\\n', '\n')
+-    text_str = text_str.replace("'", '\u00b4')   # apostrophe -> acute accent (gestion police Koei Tecmo)
+-    text_str = text_str.replace('...', '\u2026') # points de suspension -> ellipse
+-    text_str = text_str.replace('"', '\u2033')   # guillemets -> double prime
++    if os.environ.get('SANGO_LEGACY_QUOTES') == '1':
++        # old Japanese font had no ASCII ' and " glyphs: substitute look-alikes
++        text_str = text_str.replace("'", '\u00b4')
++        text_str = text_str.replace('"', '\u2033')
++    # the French font (textures 6/7 of LINKDATA entry 0, see fr_patch/) has ' " and the ellipsis
++    text_str = text_str.replace('...', '\u2026')
+     return text_str.encode('utf-8') + b'\x00'
+ 
+ def _read_tsv_grouped(tsv_path):
+@@ -232,11 +235,14 @@ def _compile_type2(out_dir):
+         header = struct.pack("<I", num_entries)
+         curr_offset = 4 + num_entries * 8
+         entry_headers = b''
++        padded_bodies = []
+         for body in entry_bodies:
+             entry_headers += struct.pack("<2I", curr_offset, len(body))
+-            curr_offset += len(body)
++            padded = body + b'\x00' * ((-len(body)) % 4)      # original files keep every entry 4-byte aligned
++            padded_bodies.append(padded)
++            curr_offset += len(padded)
+ 
+-        full_content = header + entry_headers + b''.join(entry_bodies)
++        full_content = header + entry_headers + b''.join(padded_bodies)
+         out_path = os.path.join(out_dir, filename)
+         with open(out_path, 'wb') as fo:
+             fo.write(full_content)
+@@ -255,23 +261,21 @@ def _compile_type3(out_dir):
+             dialogue_str = text[18:] if len(text) > 18 else ''
+             tempy = _process_dialogue_string(dialogue_str)
+             prefix_bytes = binascii.unhexlify(hex_prefix)
+-            strings.append(_pad_16(prefix_bytes + tempy))
++            s4 = prefix_bytes + tempy
++            strings.append(s4 + b'\x00' * ((-len(s4)) % 4))      # original Type 3 files: strings 4-byte aligned, no 16-byte padding
+ 
+         num_strings = len(strings)
+         file_table = b'\x62\x29\x00\x00' + struct.pack("<I", num_strings)
+-        table_size = (num_strings * 4) + 8
+-        rem = table_size % 16
+-        data_offset = table_size + (16 - rem if rem != 0 else 0)
++        data_offset = (num_strings * 4) + 8                      # offset table directly followed by the strings
+ 
+         for s in strings:
+             file_table += struct.pack("<I", data_offset)
+             data_offset += len(s)
+ 
+-        rem_table = len(file_table) % 16
+-        if rem_table != 0:
+-            file_table += b"\x00" * (16 - rem_table)
+-
+-        full_content = file_table + b''.join(strings)
++        body = b''.join(strings)
++        if strings:                                              # the last string of an original file is not padded
++            last = strings[-1]; body = body[:len(body) - len(last)] + last.rstrip(b'\x00') + b'\x00'
++        full_content = file_table + body
+         out_path = os.path.join(out_dir, filename)
+         with open(out_path, 'wb') as fo:
+             fo.write(full_content)
+@@ -307,11 +311,12 @@ def _compile_type4(out_dir):
+ 
+         e0_offset = 20
+         e0_size = len(e0_full)
+-        e1_offset = e0_offset + e0_size
++        e0_pad = b'\x00' * ((-e0_size) % 4)                  # original files keep entry 1 4-byte aligned
++        e1_offset = e0_offset + e0_size + len(e0_pad)
+         e1_size = len(entry1_data)
+ 
+         header = struct.pack("<I", 2) + struct.pack("<2I", e0_offset, e0_size) + struct.pack("<2I", e1_offset, e1_size)
+-        full_content = header + e0_full + entry1_data
++        full_content = header + e0_full + e0_pad + entry1_data
+ 
+         out_path = os.path.join(out_dir, filename)
+         with open(out_path, 'wb') as fo:
+diff --git a/Sangokushi-script-Type2.tsv b/Sangokushi-script-Type2.tsv
+index 3661d1c..123f9eb 100644
+--- a/Sangokushi-script-Type2.tsv
++++ b/Sangokushi-script-Type2.tsv
+@@ -810,7 +810,7 @@ une bataille territoriale ?"
+ 00000056-X-00101812.script	56	2	2	33	【顔：かお】アイコンを【変更：へんこう】します	Changer votre icône d'avatar.	
+ 00000056-X-00101812.script	56	2	2	34	ひとことコメントを【変更：へんこう】します	Modifier votre message personnel.	
+ 00000056-X-00101812.script	56	2	2	35	【物語：ものがたり】を【最初：さいしょ】からはじめます	Commencer l'histoire depuis le début.	
+-00000056-X-00101812.script	56	2	2	36	【物語：ものがたり】のつづきを【遊：あそ】びます	Reprendre l'aventure là où vous vous étiez arrêté.	
++00000056-X-00101812.script	56	2	2	36	【物語：ものがたり】のつづきを【遊：あそ】びます	Reprendre là où vous vous étiez arrêté.	
+ 00000056-X-00101812.script	56	2	2	37	アイテム　ぎょうさん【買：か】っていってや～	Achetez-moi plein d'objets, mon bon monsieur !	
+ 00000056-X-00101812.script	56	2	2	38	もちもの　【高：たか】く【買：か】い【取：と】るで～！	Je vous rachète vos affaires à bon prix !	
+ 00000056-X-00101812.script	56	2	2	39	【素材：そざい】を【使：つか】って　【装備品：そうびひん】を【作：つく】るで～！	Fabriquons de l'équipement avec vos matériaux !	
+@@ -833,9 +833,9 @@ c'est bien ça ?"
+ 00000056-X-00101812.script	56	2	3	5	【g】%s【e】\nこの【名前：なまえ】でよろしいですか？	"【g】%s【e】
+ Confirmer ce nom ?"	
+ 00000056-X-00101812.script	56	2	3	6	なまえ	Nom	
+-00000056-X-00101812.script	56	2	3	7	この「【名前：なまえ】」は【通信：つうしん】プレイで\nいっしょに【遊：あそ】ぶ【相手：あいて】が【見：み】るものです。\n【r】【人：ひと】を【傷：きず】つける【言葉：ことば】や【不快：ふかい】に【感：かん】じる【e】\n【r】【言葉：ことば】を【使：つか】わないようにしましょう【e】	"Ce pseudo sera visible par les autres joueurs lors des communications en ligne.
+-【r】N'utilisez pas de propos insultants, blessants【e】
+-【r】ou inappropriés.【e】"	
++00000056-X-00101812.script	56	2	3	7	この「【名前：なまえ】」は【通信：つうしん】プレイで\nいっしょに【遊：あそ】ぶ【相手：あいて】が【見：み】るものです。\n【r】【人：ひと】を【傷：きず】つける【言葉：ことば】や【不快：ふかい】に【感：かん】じる【e】\n【r】【言葉：ことば】を【使：つか】わないようにしましょう【e】	"Il sera visible des autres joueurs en ligne.
++【r】N'utilisez pas de propos insultants,【e】
++【r】blessants ou inappropriés.【e】"	
+ 00000056-X-00101812.script	56	2	3	8	その【名前：なまえ】は【使用：しよう】できません。	Ce pseudo ne peut pas être utilisé.	
+ 00000056-X-00101812.script	56	2	3	9	コメントを【設定：せってい】してください。\n【r】コメントは【通信相手：つうしんあいて】に【公開：こうかい】されます。【e】	"Veuillez saisir votre commentaire personnel.
+ 【r】Il sera visible par les autres joueurs.【e】"	
+@@ -846,12 +846,13 @@ Confirmer ce nom ?"
+ 00000056-X-00101812.script	56	2	3	13	【b】%s【e】\nこの【妖怪：ようかい】でよろしいですか？	"【b】%s【e】
+ Confirmer ce Yo-kai ?"	
+ 00000056-X-00101812.script	56	2	3	14	この【作品：さくひん】はフィクションです。\n【実在：じつざい】の「【人物：じんぶつ】」「【地名：ちめい】」「【団体：だんたい】」などには\nいっさい【関係：かんけい】ありません。	"Ce jeu est une œuvre de fiction.
+-Toute ressemblance avec des personnes, des lieux ou des organisations réelles serait purement fortuite."	
+-00000056-X-00101812.script	56	2	3	15	『【妖怪三国志：ようかいさんごくし】』は　ニンテンドー３ＤＳ\n【本体：ほんたい】の【時計機能：とけいきのう】を【使用：しよう】しています。\n【本体：ほんたい】に【設定：せってい】されている【時刻：じこく】を【変更：へんこう】すると\n【正：ただ】しく【進行：しんこう】できなくなる【可能性：かのうせい】があります。	"« Yo-kai Sangokushi » utilise l'horloge interne de la console Nintendo 3DS.
+-Modifier l'heure de la console peut perturber le bon déroulement du jeu."	
++Toute ressemblance avec des personnes, des lieux
++ou des organisations réelles serait purement fortuite."	
++00000056-X-00101812.script	56	2	3	15	『【妖怪三国志：ようかいさんごくし】』は　ニンテンドー３ＤＳ\n【本体：ほんたい】の【時計機能：とけいきのう】を【使用：しよう】しています。\n【本体：ほんたい】に【設定：せってい】されている【時刻：じこく】を【変更：へんこう】すると\n【正：ただ】しく【進行：しんこう】できなくなる【可能性：かのうせい】があります。	"« Yo-kai Sangokushi » utilise l'horloge de la console.
++Modifier l'heure peut perturber le déroulement du jeu."	
+ 00000056-X-00101812.script	56	2	3	16	『【妖怪三国志：ようかいさんごくし】』は　ＳＤカードに\nセーブデータとは【別：べつ】に【追加：ついか】データを【保存：ほぞん】します。\n【連動用：れんどうよう】として【使用：しよう】するため　【誤：あやま】って【追加：ついか】データを\n【削除：さくじょ】しないようにしてください。	« Yo-kai Sangokushi » sauvegarde des données\nadditionnelles sur la carte SD en plus de votre sauvegarde.\nCes données servant à la liaison entre jeux, veillez\nà ne pas les supprimer par erreur.	
+-00000056-X-00101812.script	56	2	3	17	このゲームはシミュレーションゲームです。\nＲＰＧとは【少：すこ】し【違：ちが】っていて \n【妖怪一人一人：ようかいひとりひとり】をべつべつに【動：うご】かします。\n【戦術：せんじゅつ】や【作戦：さくせん】を【考：かんが】えて【戦：たたか】い\n【自分：じぶん】の【陣地：じんち】を【広：ひろ】げていきましょう。	Ce jeu est un jeu de stratégie au tour par tour.\nContrairement aux RPG habituels, vous déplacez\nchaque Yo-kai individuellement sur le champ de bataille.\nÉlaborez des tactiques pour vaincre vos ennemis\net étendre votre territoire !	
+-00000056-X-00101812.script	56	2	3	18	【今：いま】までの『【妖怪：ようかい】ウォッチ』よりも\nちょっとだけむずかしいですが\n【頭：あたま】を【使：つか】ってけっこう【奥：おく】が【深：ふか】いので\nクリア【目指：めざ】してがんばりましょう。	C'est un peu plus complexe que les précédents\njeux « Yo-kai Watch », mais ce défi tactique\nest passionnant et plein de profondeur !\nFaites preuve d'ingéniosité pour triompher !	
++00000056-X-00101812.script	56	2	3	17	このゲームはシミュレーションゲームです。\nＲＰＧとは【少：すこ】し【違：ちが】っていて \n【妖怪一人一人：ようかいひとりひとり】をべつべつに【動：うご】かします。\n【戦術：せんじゅつ】や【作戦：さくせん】を【考：かんが】えて【戦：たたか】い\n【自分：じぶん】の【陣地：じんち】を【広：ひろ】げていきましょう。	Un jeu de stratégie au tour par tour.\nContrairement aux RPG, vous déplacez\nchaque Yo-kai sur le champ de bataille.\nÉlaborez des tactiques pour vaincre\nvos ennemis et étendre votre territoire !	
++00000056-X-00101812.script	56	2	3	18	【今：いま】までの『【妖怪：ようかい】ウォッチ』よりも\nちょっとだけむずかしいですが\n【頭：あたま】を【使：つか】ってけっこう【奥：おく】が【深：ふか】いので\nクリア【目指：めざ】してがんばりましょう。	C'est plus complexe que les épisodes\nprécédents, mais ce défi tactique\nest passionnant et plein de profondeur !\nFaites preuve d'ingéniosité !	
+ 00000056-X-00101812.script	56	2	3	19	お【話：はなし】を【記録：きろく】するときに\nこのにっきに【上書：うわが】きします。\nよろしいですか？	"Voulez-vous écraser cette sauvegarde
+ pour enregistrer votre progression ?
+ Confirmer ?"	
+@@ -13539,13 +13540,13 @@ Je compte sur toi désormais !"
+ Enchanté de faire équipe avec toi !"	
+ 00000057-X-01040104.script	57	2	49	4	はじめまして～。\nきみとの【関係：かんけい】はいつまで【続：つづ】くかなぁ～？	"Enchanté !
+ Combien de temps notre relation va-t-elle durer... ?"	
+-00000057-X-01040104.script	57	2	49	5	そろそろ【交換相手】のともだちは\nやめたかったんじゃ。　よろしく【頼：たの】むぞ。	"Je voulais justement cesser d'être l'ami de 【Partenaire d'échange】.
++00000057-X-01040104.script	57	2	49	5	そろそろ【交換相手】のともだちは\nやめたかったんじゃ。　よろしく【頼：たの】むぞ。	"Je voulais justement cesser d'être l'ami de 【交換相手】.
+ Je compte sur toi !"	
+-00000057-X-01040104.script	57	2	49	6	もう【交換相手】とは　【終：お】わりじゃ！\nきみと　【新：あら】たな【友情：ゆうじょう】を【築：きず】こうぞ！	"C'est terminé avec 【Partenaire d'échange】 !
++00000057-X-01040104.script	57	2	49	6	もう【交換相手】とは　【終：お】わりじゃ！\nきみと　【新：あら】たな【友情：ゆうじょう】を【築：きず】こうぞ！	"C'est terminé avec 【交換相手】 !
+ Bâtissons une nouvelle amitié ensemble !"	
+ 00000057-X-01040104.script	57	2	49	7	【新：あら】たな【出会：であ】いに　テンション【上：あ】がるモチー！\nいつもより【大：おお】きくふくらんでるモチー！	"Cette nouvelle rencontre me gonfle d'énergie, mochi !
+ Je suis deux fois plus rebondi que d'habitude, mochi !"	
+-00000057-X-01040104.script	57	2	49	8	【交換相手】から　【焼：や】きもちやかれる\nぐらい　【仲良：なかよ】くなろうモチー！	"Devenons tellement complices que 【Partenaire d'échange】
++00000057-X-01040104.script	57	2	49	8	【交換相手】から　【焼：や】きもちやかれる\nぐらい　【仲良：なかよ】くなろうモチー！	"Devenons tellement complices que 【交換相手】
+ en sera vert de jalousie, mochi !"	
+ 00000057-X-01040104.script	57	2	49	9	-	-	
+ 00000057-X-01040104.script	57	2	49	10	あぁ～　まあ【何：なん】でもいいけん\nよろしく　【頼：たの】むね～。	"Ah... Bon, peu importe de toute façon,
+@@ -13557,7 +13558,7 @@ Je compte sur toi !!!"
+ 00000057-X-01040104.script	57	2	49	13	【今回：こんかい】のバクチは　おれの【勝利：しょうり】のようだ！\nきみの【方：ほう】が【前：まえ】のともだちよりいいからな！	"On dirait que j'ai gagné mon pari !
+ Tu as l'air bien plus sympa que mon ancien ami !"	
+ 00000057-X-01040104.script	57	2	49	14	-	-	
+-00000057-X-01040104.script	57	2	49	15	【交換相手】も　いい【戦士：せんし】だったが…。\nきみも　【良：よ】い【面構：つらがま】えをしているな！	"【Partenaire d'échange】 était un bon guerrier...
++00000057-X-01040104.script	57	2	49	15	【交換相手】も　いい【戦士：せんし】だったが…。\nきみも　【良：よ】い【面構：つらがま】えをしているな！	"【交換相手】 était un bon guerrier...
+ Mais tu as toi aussi un regard très brave !"	
+ 00000057-X-01040104.script	57	2	49	16	お【主：ぬし】が　【新：あたら】しいともだちでござるか！\nよろしく【頼：たの】むでござる！	"Vous êtes donc mon nouvel ami, de gozaru !
+ Je compte sur vous, de gozaru !"	
+@@ -13573,7 +13574,7 @@ Je compte sur toi désormais !"
+ 00000057-X-01040104.script	57	2	49	22	-	-	
+ 00000057-X-01040104.script	57	2	49	23	メラメラァ～！\n（アツい【友情：ゆうじょう】の【始：はじ】まりメラ！）	"Flammèche !
+ (C'est le début d'une amitié brûlante, mela !)"	
+-00000057-X-01040104.script	57	2	49	24	【交換相手】は【心：こころ】ふるわせる\nスゴイ【奴：やつ】だった。　きみはどうかな？	"【Partenaire d'échange】 était un être formidable
++00000057-X-01040104.script	57	2	49	24	【交換相手】は【心：こころ】ふるわせる\nスゴイ【奴：やつ】だった。　きみはどうかな？	"【交換相手】 était un être formidable
+ qui faisait vibrer les cœurs. Et toi alors ?"	
+ 00000057-X-01040104.script	57	2	49	25	【出会：であ】った【瞬間：しゅんかん】　【心：こころ】がとどろいた！\nこの【出会：であ】いに【感謝：かんしゃ】だ！	"Dès l'instant où je t'ai vu, mon cœur a grondé !
+ Je bénis notre rencontre !"	
+@@ -13585,13 +13586,13 @@ Je compte sur toi !"
+ 00000057-X-01040104.script	57	2	49	30	なかなか【熱：あつ】い【闘志：とうし】を【秘：ひ】めているな…。\nこれからが【楽：たの】しみだ！	"Tu caches une combativité bien ardente...
+ J'ai hâte de voir ce que ça va donner !"	
+ 00000057-X-01040104.script	57	2	49	31	【戦：たたか】いの【神：かみ】である　オレを【放：ほう】りだすとは\n【交換相手】はどうかしてるぜ。	"Se débarrasser du dieu du combat en personne...
+-【Partenaire d'échange】 a perdu la tête !"	
++【交換相手】 a perdu la tête !"	
+ 00000057-X-01040104.script	57	2	49	32	-	-	
+ 00000057-X-01040104.script	57	2	49	33	お【主：ぬし】が　ワシの【新：あたら】しい【主人：しゅじん】か！\n【運命：うんめい】を【共：とも】にさせていただく！	"Vous êtes mon nouveau maître !
+ Je lierai mon destin au vôtre !"	
+ 00000057-X-01040104.script	57	2	49	34	ふむ。　【貴様：きさま】　【良：よ】い【顔：かお】をしておるな！\nこれから　よろしく【頼：たの】むぞ！	"Hmm. Tu as une prestance admirable !
+ Je compte sur toi désormais !"	
+-00000057-X-01040104.script	57	2	49	35	くっそー！　【交換相手】め！\nワシを　【放：ほう】りだしやがって！　ゆるさん！	"Misère ! Ce maudit 【Partenaire d'échange】 !
++00000057-X-01040104.script	57	2	49	35	くっそー！　【交換相手】め！\nワシを　【放：ほう】りだしやがって！　ゆるさん！	"Misère ! Ce maudit 【交換相手】 !
+ Oser m'abandonner ainsi ! C'est impardonnable !"	
+ 00000057-X-01040104.script	57	2	49	36	【悪：わる】い【子：こ】はいねがー！？\nワシが　【叩：たた】き【直：なお】してやるべ～！	"Y a-t-il des enfants pas sages par ici ?!
+ Je vais leur remettre les idées en place !"	
+@@ -13600,9 +13601,9 @@ Je vais leur remettre les idées en place !"
+ Mon nez n'arrête pas de couler."	
+ 00000057-X-01040104.script	57	2	49	39	よ…　よろしく。　【風邪：かぜ】ぎみだから\nうつしちゃったらごめんね？	"En... enchanté. J'ai un petit rhume,
+ pardon si je te le transmets..."	
+-00000057-X-01040104.script	57	2	49	40	あなた　【交換相手】の【知：し】り【合：あ】い？\nよろしくぅ～！	"Tu connais 【Partenaire d'échange】 ?
++00000057-X-01040104.script	57	2	49	40	あなた　【交換相手】の【知：し】り【合：あ】い？\nよろしくぅ～！	"Tu connais 【交換相手】 ?
+ Enchanté alors !"	
+-00000057-X-01040104.script	57	2	49	41	あなた　【交換相手】のともだちね？\n【目：め】を【見：み】ればわかるわ。	"Tu es l'ami de 【Partenaire d'échange】, n'est-ce pas ?
++00000057-X-01040104.script	57	2	49	41	あなた　【交換相手】のともだちね？\n【目：め】を【見：み】ればわかるわ。	"Tu es l'ami de 【交換相手】, n'est-ce pas ?
+ Ça se voit tout de suite dans tes yeux."	
+ 00000057-X-01040104.script	57	2	49	42	-	-	
+ 00000057-X-01040104.script	57	2	49	43	あれ？　【前：まえ】のともだちの【名前：なまえ】\nなんだっけ？　【忘：わす】れちゃった…。	"Tiens ? C'était quoi déjà le nom
+@@ -13613,13 +13614,13 @@ J'y comprends rien mais enchanté !"
+ 00000057-X-01040104.script	57	2	49	46	うひゃひゃひゃ　あんたの【顔：かお】\n【面白：おもしろ】すぎ！　うひゃひゃひゃ！	"Ouhyahyaha ! Ta tête
+ est trop drôle ! Ouhyahyaha !"	
+ 00000057-X-01040104.script	57	2	49	47	あなた　くちびるの【色：いろ】きれいね！\n【交換相手】より　【健康：けんこう】そう！	"Tes lèvres ont une si jolie couleur !
+-Tu as l'air en bien meilleure santé que 【Partenaire d'échange】 !"	
++Tu as l'air en bien meilleure santé que 【交換相手】 !"	
+ 00000057-X-01040104.script	57	2	49	48	お【主：ぬし】が　【新：あたら】しい【主人：しゅじん】か！？\nよろしく【頼：たの】むでござる！	"Vous êtes mon nouveau maître !?
+ Je compte sur vous, de gozaru !"	
+ 00000057-X-01040104.script	57	2	49	49	いよぉーっ！\n【主役：しゅやく】の【登場：とうじょう】だぁ～っ！	"Iyyyôôôh !
+ Place à la vedette du spectacle !"	
+ 00000057-X-01040104.script	57	2	49	50	-	-	
+-00000057-X-01040104.script	57	2	49	51	フフフ…。　【交換相手】の【次：つぎ】は\nきみのハートを【撃：う】ち【抜：ぬ】こうかな！	"Hi hi hi... Après 【Partenaire d'échange】,
++00000057-X-01040104.script	57	2	49	51	フフフ…。　【交換相手】の【次：つぎ】は\nきみのハートを【撃：う】ち【抜：ぬ】こうかな！	"Hi hi hi... Après 【交換相手】,
+ et si je venais transpercer ton cœur en plein vol !"	
+ 00000057-X-01040104.script	57	2	49	52	-	-	
+ 00000057-X-01040104.script	57	2	49	53	きみ　いい【顔：かお】してるね！\nこれから【毎日：まいにち】バラ【色：いろ】だな！	"Tu as une très jolie mine !
+@@ -13627,14 +13628,14 @@ La vie va être rose tous les jours avec toi !"
+ 00000057-X-01040104.script	57	2	49	54	また　【捨：す】てられちゃった…。\nキミはボクのこと【捨：す】てないでね…。	"On m'a encore abandonné...
+ Ne me jette pas toi non plus, s'il te plaît..."	
+ 00000057-X-01040104.script	57	2	49	55	ババーン！\n（【交換相手】の【話：はなし】バクロしてやるね）	"Vlan !
+-(Je vais te révéler tous les secrets de 【Partenaire d'échange】 !)"	
++(Je vais te révéler tous les secrets de 【交換相手】 !)"	
+ 00000057-X-01040104.script	57	2	49	56	ババーン！\n（よろしくぅ～）	"Vlan !
+ (Ravi de faire ta connaissance !)"	
+ 00000057-X-01040104.script	57	2	49	57	-	-	
+ 00000057-X-01040104.script	57	2	49	58	ババーン！\n（これから　よろしく【頼：たの】むよ！）	"Vlan !
+ (Je compte sur toi désormais !)"	
+ 00000057-X-01040104.script	57	2	49	59	ほっほっほ　【交換相手】の【夢：ゆめ】は\n【食：く】いあきておったんじゃ。　よろしくな。	"Ho ho ho ! J'avais assez mangé les songes
+-de 【Partenaire d'échange】. Enchanté de te connaître !"	
++de 【交換相手】. Enchanté de te connaître !"	
+ 00000057-X-01040104.script	57	2	49	60	これからよろしくね！\nいい【夢見：ゆめみ】せてあげるよぉ～！	"Enchanté d'être avec toi !
+ Je vais te faire faire de beaux rêves !"	
+ 00000057-X-01040104.script	57	2	49	61	-	-	
+@@ -13656,7 +13657,7 @@ Elle ne fait que passer d'une âme à l'autre..."
+ Je m'en remets à toi pour quelque temps..."	
+ 00000057-X-01040104.script	57	2	49	70	-	-	
+ 00000057-X-01040104.script	57	2	49	71	はじめまして…。　【交換相手】の\n【町：まち】から【来：き】たの。　よろしくね。	"Enchantée... Je viens de la ville
+-de 【Partenaire d'échange】. Ravie d'être avec toi."	
++de 【交換相手】. Ravie d'être avec toi."	
+ 00000057-X-01040104.script	57	2	49	72	-	-	
+ 00000057-X-01040104.script	57	2	49	73	うふふ…。　あなたいい【顔：かお】してる。\nこれからよろしくね！	"Oufouff... Tu as un bien joli visage.
+ Enchantée d'être avec toi !"	
+@@ -13676,16 +13677,16 @@ c'était tellement fatigant..."
+ Je compte sur toi !"	
+ 00000057-X-01040104.script	57	2	49	81	あ！　【気：き】を【付：つ】けて！\nボクのトゲにさわっちゃダメだよ～。	"Ah ! Fais bien attention !
+ Ne touche surtout pas à mes piquants !"	
+-00000057-X-01040104.script	57	2	49	82	【交換相手】の【所：ところ】から【来：き】ました。\nウニだけど【食：た】べちゃだめだよ？	"J'arrive de chez 【Partenaire d'échange】.
++00000057-X-01040104.script	57	2	49	82	【交換相手】の【所：ところ】から【来：き】ました。\nウニだけど【食：た】べちゃだめだよ？	"J'arrive de chez 【交換相手】.
+ Je suis un oursin, mais ne me mange pas, d'accord ?"	
+ 00000057-X-01040104.script	57	2	49	83	あなた　ださいわね～。\n【私：わたし】が　おっしゃれ～にしてあげるわ！	"Tu n'as aucun style, ma parole !
+ Je vais te relooker avec grande classe !"	
+ 00000057-X-01040104.script	57	2	49	84	-	-	
+ 00000057-X-01040104.script	57	2	49	85	あなたの【服装：ふくそう】センス\n【交換相手】といい【勝負：しょうぶ】ね！	"Ton sens vestimentaire est au même niveau
+-que celui de 【Partenaire d'échange】 !"	
++que celui de 【交換相手】 !"	
+ 00000057-X-01040104.script	57	2	49	86	はじめまして。　【私：わたし】の【美：うつく】しい\n【骨：ほね】に　【見：み】とれちゃだめよ。	"Enchantée. Ne reste pas là à contempler
+ mes magnifiques ossements sans fin."	
+-00000057-X-01040104.script	57	2	49	87	【交換相手】とやってくの　ムーリー！\nお【前：まえ】にお【世話：せわ】になるー！	"Rester avec 【Partenaire d'échange】, c'était im-pos-sible !
++00000057-X-01040104.script	57	2	49	87	【交換相手】とやってくの　ムーリー！\nお【前：まえ】にお【世話：せわ】になるー！	"Rester avec 【交換相手】, c'était im-pos-sible !
+ Je viens crécher chez toi !"	
+ 00000057-X-01040104.script	57	2	49	88	-	-	
+ 00000057-X-01040104.script	57	2	49	89	はじめましてだじょ～！\n【今日：きょう】からお【前：まえ】を【守：まも】っていくじょ～！	"Enchanté, djo !
+@@ -13709,7 +13710,7 @@ Enchanté !"
+ 00000057-X-01040104.script	57	2	49	99	-	-	
+ 00000057-X-01040104.script	57	2	49	100	どんな【奴：やつ】が【来：く】るのかと【思：おも】ったが\nお【前：まえ】はなかなか【面白：おもしろ】そうだな！	"Je me demandais sur qui j'allais tomber,
+ mais tu as l'air drôlement intéressant !"	
+-00000057-X-01040104.script	57	2	49	101	【交換相手】に【言：い】われて【来：き】てみれば…\nここもなかなか【面白：おもしろ】そうな【所：ところ】じゃな！	"Sur les conseils de 【Partenaire d'échange】, me voilà...
++00000057-X-01040104.script	57	2	49	101	【交換相手】に【言：い】われて【来：き】てみれば…\nここもなかなか【面白：おもしろ】そうな【所：ところ】じゃな！	"Sur les conseils de 【交換相手】, me voilà...
+ Cet endroit a l'air bien captivant ma foi !"	
+ 00000057-X-01040104.script	57	2	49	102	-	-	
+ 00000057-X-01040104.script	57	2	49	103	ほっほっほ　ワシが【来：き】たからには\nお【主：ぬし】が【一番：いちばん】！　【間違：まちが】いないぞ！	"Ho ho ho ! Maintenant que je suis là,
+@@ -13731,7 +13732,7 @@ Je compte sur toi, min !"
+ 00000057-X-01040104.script	57	2	49	112	つかまりやすそうな【木：き】がある\nいい【町：まち】じゃねぇか！　【気：き】に【入：い】った！	"Les arbres sont parfaits pour s'y agripper !
+ Cette ville me plaît bien !"	
+ 00000057-X-01040104.script	57	2	49	113	【交換相手】が【愛：あい】した　せっしゃの【美声：びせい】\n【聴：き】かせてあげようか？	"Veux-tu entendre ma voix mélodieuse
+-que 【Partenaire d'échange】 adorait tant ?"	
++que 【交換相手】 adorait tant ?"	
+ 00000057-X-01040104.script	57	2	49	114	【交換：こうかん】されちゃった…　トホホ…。\nあなたは　【大事：だいじ】にしてくださいね…。	"On m'a échangé... Misère...
+ Prends bien soin de moi, s'il te plaît..."	
+ 00000057-X-01040104.script	57	2	49	115	あたし　【不恰好：ぶかっこう】ですけど…\nがんばりますので　よろしく…。	"Je n'ai pas fière allure, mais...
+@@ -13756,13 +13757,13 @@ Je te recommande vivement de porter des lunettes de soleil !"
+ Je compte sur toi, nyan !"	
+ 00000057-X-01040104.script	57	2	49	126	ここは　なかなかいい【町：まち】ニャン！\nよろしく【頼：たの】むニャン！	"C'est une ville très agréable, nyan !
+ Je compte sur toi, nyan !"	
+-00000057-X-01040104.script	57	2	49	127	【交換相手】も　いい【人：ひと】だったけど\nきみもいい【人：ひと】そうニャン！　【安心：あんしん】したニャ！	"【Partenaire d'échange】 était très gentil, mais
++00000057-X-01040104.script	57	2	49	127	【交換相手】も　いい【人：ひと】だったけど\nきみもいい【人：ひと】そうニャン！　【安心：あんしん】したニャ！	"【交換相手】 était très gentil, mais
+ tu as l'air tout aussi sympa, nyan ! Me voilà rassuré, nya !"	
+ 00000057-X-01040104.script	57	2	49	128	キミは　【熱：あつ】い【心：こころ】をもっているかニャン？\nこれから【確：たし】かめさせてもらうニャン！	"Ton cœur brûle-t-il d'une flamme ardente, nyan ?
+ C'est ce que je vais vérifier, nyan !"	
+ 00000057-X-01040104.script	57	2	49	129	【今日：きょう】はいい【日：ひ】だニャン～。\nきみと【出会：であ】えたニャン！	"C'est un jour béni, nyan !
+ J'ai pu faire ta connaissance, nyan !"	
+-00000057-X-01040104.script	57	2	49	130	【交換相手】から　はけんされて\n【来：き】たっすー！　よろしくっすー！	"J'ai été envoyé en mission par 【Partenaire d'échange】 !
++00000057-X-01040104.script	57	2	49	130	【交換相手】から　はけんされて\n【来：き】たっすー！　よろしくっすー！	"J'ai été envoyé en mission par 【交換相手】 !
+ Enchanté de faire équipe avec toi !"	
+ 00000057-X-01040104.script	57	2	49	131	-	-	
+ 00000057-X-01040104.script	57	2	49	132	-	-	
+@@ -13772,7 +13773,7 @@ Je resterai peut-être longtemps dans cette ville."
+ de sacrées vagues ! Ça me plaît bien !"	
+ 00000057-X-01040104.script	57	2	49	135	-	-	
+ 00000057-X-01040104.script	57	2	49	136	-	-	
+-00000057-X-01040104.script	57	2	49	137	【交換相手】の【町：まち】から【来：き】たズラ…。\nきんちょうするけど…　よろしくズラ…。	"Je viens de la ville de 【Partenaire d'échange】, zura...
++00000057-X-01040104.script	57	2	49	137	【交換相手】の【町：まち】から【来：き】たズラ…。\nきんちょうするけど…　よろしくズラ…。	"Je viens de la ville de 【交換相手】, zura...
+ Je suis un peu ému... mais enchanté, zura..."	
+ 00000057-X-01040104.script	57	2	49	138	コマさん【見：み】てないかズラ？\nこの【町：まち】で【探：さが】させてもらうズラ！	"T'aurais pas vu mon grand frère Komasan, zura ?
+ Je vais le chercher dans le coin, zura !"	
+@@ -13792,7 +13793,7 @@ Oh ! Tiens... ? Où suis-je donc ?"
+ C'est que... en... enchanté de faire ta connaissance."	
+ 00000057-X-01040104.script	57	2	49	149	-	-	
+ 00000057-X-01040104.script	57	2	49	150	こ…　この【町寒：まちさむ】くない…？\n【交換相手】の【町：まち】も【寒：さむ】かったけど…。	"Il... il fait pas un peu froid ici... ?
+-Même si la ville de 【Partenaire d'échange】 était glaciale aussi..."	
++Même si la ville de 【交換相手】 était glaciale aussi..."	
+ 00000057-X-01040104.script	57	2	49	151	-	-	
+ 00000057-X-01040104.script	57	2	49	152	オレが【来：き】たからには　【地球温暖化：ちきゅうおんだんか】も\n【解決：かいけつ】だ！　【良：よ】かったね！	"Maintenant que je suis là, le réchauffement climatique
+ est de l'histoire ancienne ! Bonne nouvelle, pas vrai !"	
+@@ -13822,13 +13823,13 @@ Bien que tu ne puisses rivaliser avec moi !"
+ 00000057-X-01040104.script	57	2	49	167	うまそうな【奴：やつ】が【来：き】たなぁ～！\nいつか【食：た】べてやるぞぉ～！	"Quel délicieux morceau vient d'arriver !
+ Je finirai par te croquer un de ces jours !"	
+ 00000057-X-01040104.script	57	2	49	168	-	-	
+-00000057-X-01040104.script	57	2	49	169	【交換相手】に【捨：す】てられたんです！\nチクショー！！！！	"【Partenaire d'échange】 m'a abandonné !
++00000057-X-01040104.script	57	2	49	169	【交換相手】に【捨：す】てられたんです！\nチクショー！！！！	"【交換相手】 m'a abandonné !
+ Misérable scélérat !!!!"	
+ 00000057-X-01040104.script	57	2	49	170	-	-	
+ 00000057-X-01040104.script	57	2	49	171	お【前：まえ】　なかなかいい【顔：かお】してるな！\n【顔：かお】がもう【一個：いっこ】あればカンペキだな！	"Tu as un fort joli visage !
+ Avec une deuxième tête en plus, ce serait la perfection !"	
+ 00000057-X-01040104.script	57	2	49	172	【三途：さんず】の【川：かわ】…　ではなく…\n【交換相手】の【町：まち】から【来：き】たぜ！	"Tout droit venu du fleuve Sanzu... enfin non...
+-de la ville de 【Partenaire d'échange】 !"	
++de la ville de 【交換相手】 !"	
+ 00000057-X-01040104.script	57	2	49	173	【笑：わら】ってたら　こんなとこ【来：き】ちゃった！\nウハハハハハ！　ちょーウケる！	"À force de rire, j'ai atterri ici !
+ Ouhahahahaha ! Trop tordant !"	
+ 00000057-X-01040104.script	57	2	49	174	フン♪フフン♪　きみが【新：あたら】しいともだち？\nさっそく　デュエットしようよ！	"La la lala ♪ C'est toi mon nouvel ami ?
+@@ -13838,7 +13839,7 @@ de me glisser dans les jarres de cette ville !"
+ 00000057-X-01040104.script	57	2	49	176	-	-	
+ 00000057-X-01040104.script	57	2	49	177	ハーイ！　【私：わたし】がともだちになったから\nあなた　【絶好調：ぜっこうちょう】になれるよ！	"Coucou ! Maintenant que nous sommes amis,
+ tu seras au sommet de ta forme !"	
+-00000057-X-01040104.script	57	2	49	178	【交換相手】に　【絶交：ぜっこう】されちゃった！\nあなたは　【絶交：ぜっこう】しないよね！？	"【Partenaire d'échange】 a rompu notre amitié !
++00000057-X-01040104.script	57	2	49	178	【交換相手】に　【絶交：ぜっこう】されちゃった！\nあなたは　【絶交：ぜっこう】しないよね！？	"【交換相手】 a rompu notre amitié !
+ Tu ne feras pas ça toi aussi, dis ?"	
+ 00000057-X-01040104.script	57	2	49	179	-	-	
+ 00000057-X-01040104.script	57	2	49	180	【最高潮：さいこうちょう】に【盛：も】り【上：あ】がってキター！\nこれから　いっしょにがんばりましょ！	"L'ambiance est survoltée au maximum !
+@@ -13847,7 +13848,7 @@ Donnons tout ce qu'on a ensemble désormais !"
+ Je te suivrai pour toujours !"	
+ 00000057-X-01040104.script	57	2	49	182	この【町：まち】にも　ワカメ【音頭：おんど】を【広：ひろ】めに【来：き】たよ！\nきみもいっしょに　おどろうよ！	"Je suis venu enseigner la danse des algues ici aussi !
+ Danse avec moi !"	
+-00000057-X-01040104.script	57	2	49	183	【交換相手】はいいダンサーだった。\nきみのダンスも【見：み】てあげるぜっ！	"【Partenaire d'échange】 avait un bon jeu de jambes.
++00000057-X-01040104.script	57	2	49	183	【交換相手】はいいダンサーだった。\nきみのダンスも【見：み】てあげるぜっ！	"【交換相手】 avait un bon jeu de jambes.
+ Montre-moi un peu tes pas de danse !"	
+ 00000057-X-01040104.script	57	2	49	184	あなたを【見：み】てると　ノリノリになっちゃう！\nこの【町：まち】に【来：き】て　よかったわ！	"Te voir me donne une pêche d'enfer !
+ Je suis tellement ravie d'être venue ici !"	
+@@ -13857,24 +13858,24 @@ tu me fais fondre le cœur, kyuuun !"
+ 00000057-X-01040104.script	57	2	49	187	-	-	
+ 00000057-X-01040104.script	57	2	49	188	ズキュキュキュキュン！　キミとの【友情：ゆうじょう】\n【感：かん】じさせてね！　ズキュキュキュキュン！	"Zukyu-kyu-kyuuun ! Fais-moi ressentir
+ toute la force de notre amitié ! Zukyu-kyu-kyuuun !"	
+-00000057-X-01040104.script	57	2	49	189	【交換相手】が　ぼくは【腹黒：はらぐろ】いって？\nそんなことないよ！　【仲良：なかよ】くしようね！	"【Partenaire d'échange】 prétend que j'ai l'âme perfide ?
++00000057-X-01040104.script	57	2	49	189	【交換相手】が　ぼくは【腹黒：はらぐろ】いって？\nそんなことないよ！　【仲良：なかよ】くしようね！	"【交換相手】 prétend que j'ai l'âme perfide ?
+ C'est faux ! Soyons de grands amis !"	
+ 00000057-X-01040104.script	57	2	49	190	【新：あたら】しいともだち　うれしいボーノ！\nこの【町：まち】も　ステキだボーノ！	"Un nouvel ami, quel régal-bono !
+ Cette ville est splendide elle aussi-bono !"	
+-00000057-X-01040104.script	57	2	49	191	【交換相手】とお【別：わか】れ　かなしい…。\nと【思：おも】ったけど　きみと【会：あ】えて　うれしいー！	"Me séparer de 【Partenaire d'échange】 était si triste...
++00000057-X-01040104.script	57	2	49	191	【交換相手】とお【別：わか】れ　かなしい…。\nと【思：おも】ったけど　きみと【会：あ】えて　うれしいー！	"Me séparer de 【交換相手】 était si triste...
+ Mais te rencontrer me comble de joie !"	
+ 00000057-X-01040104.script	57	2	49	192	【新：あたら】しいともだち　やったー！\nでも…　なかよくしてくれるかな…？	"Youpi, un nouvel ami !
+ Mais... tu seras gentil avec moi... ?"	
+ 00000057-X-01040104.script	57	2	49	193	ほっほっほ！　なかなかいい【町：まち】じゃ！\nどんなプレゼントを【渡：わた】そうかのう！	"Ho ho ho ! C'est une bien belle ville !
+ Quel cadeau vais-je pouvoir t'offrir !"	
+-00000057-X-01040104.script	57	2	49	194	【交換相手】からのプレゼントじゃ！\nこれからよろしくのう！	"C'est un cadeau de la part de 【Partenaire d'échange】 !
++00000057-X-01040104.script	57	2	49	194	【交換相手】からのプレゼントじゃ！\nこれからよろしくのう！	"C'est un cadeau de la part de 【交換相手】 !
+ Enchanté de faire équipe avec toi !"	
+ 00000057-X-01040104.script	57	2	49	195	-	-	
+ 00000057-X-01040104.script	57	2	49	196	あらまあ！　いい【目：め】をしてるわね！\n【将来：しょうらい】が【楽：たの】しみだわ～。	"Eh bien dis donc ! Tu as un regard plein d'avenir !
+ J'ai hâte de voir ce que tu vas devenir !"	
+ 00000057-X-01040104.script	57	2	49	197	ふぉっふぉっふぉ…。　また　めんこい\nおともだちだねぇ。　ふぉっふぉっふぉ…。	"Foh foh foh... Quel adorable petit ami
+ voilà encore. Foh foh foh..."	
+-00000057-X-01040104.script	57	2	49	198	【交換相手】は　いい【根性：こんじょう】しとったぞ！\nおまえさんの【根性：こんじょう】も　【確：たし】かめさせてもらう！	"【Partenaire d'échange】 avait du cran !
++00000057-X-01040104.script	57	2	49	198	【交換相手】は　いい【根性：こんじょう】しとったぞ！\nおまえさんの【根性：こんじょう】も　【確：たし】かめさせてもらう！	"【交換相手】 avait du cran !
+ Voyons voir un peu si tu en as autant dans le ventre !"	
+ 00000057-X-01040104.script	57	2	49	199	お【前：まえ】もいいツラがまえしてるのう！\nどーれ　わしも【負：ま】けてられんわい！	"Tu as toi aussi une fière allure !
+ Je ne vais pas me laisser distancer !"	
+@@ -13894,14 +13895,14 @@ Mais j'aimerais tellement un ami, une dernière fois, bouuun..."
+ Fais bien attention à toi, bouuun."	
+ 00000057-X-01040104.script	57	2	49	208	こっち　こっち～。\nきみを　みちびいてあげるよ！	"Par ici, par ici !
+ Je vais te guider sur le bon chemin !"	
+-00000057-X-01040104.script	57	2	49	209	【交換相手】を　えこひいきしてたけど\nこれからは　きみにするよ！	"J'accordais tous mes privilèges à 【Partenaire d'échange】,
++00000057-X-01040104.script	57	2	49	209	【交換相手】を　えこひいきしてたけど\nこれからは　きみにするよ！	"J'accordais tous mes privilèges à 【交換相手】,
+ mais désormais, c'est toi mon chouchou !"	
+ 00000057-X-01040104.script	57	2	49	210	きみ　いいもの【持：も】ってそう！\n【横取：よこど】りしたら…　だめ？	"Tu as l'air d'avoir de belles choses sur toi !
+ Si je te les fauche... tu m'en voudras ?"	
+ 00000057-X-01040104.script	57	2	49	211	きみが　【新：あたら】しいともだちだね～。\nはらおどり　いっぱい【見：み】せてあげる！	"C'est toi mon nouvel ami !
+ Je vais te montrer ma fameuse danse du ventre !"	
+ 00000057-X-01040104.script	57	2	49	212	-	-	
+-00000057-X-01040104.script	57	2	49	213	【交換相手】の【町：まち】では　【負：ま】け【知：し】らずよ！\nここでもあたしは　【最強：さいきょう】だけどね！	"J'étais invaincue dans la ville de 【Partenaire d'échange】 !
++00000057-X-01040104.script	57	2	49	213	【交換相手】の【町：まち】では　【負：ま】け【知：し】らずよ！\nここでもあたしは　【最強：さいきょう】だけどね！	"J'étais invaincue dans la ville de 【交換相手】 !
+ Et ici aussi, c'est moi la plus forte !"	
+ 00000057-X-01040104.script	57	2	49	214	この【町：まち】も　【悪：わる】くないじゃな～い。\nあなたのことも　【気：き】に【入：い】ったわ～。	"Cet endroit n'est pas si mal après tout.
+ Et tu me plais beaucoup toi aussi !"	
+@@ -13911,7 +13912,7 @@ Toi et moi, on pourrait bien devenir les meilleurs potes !"
+ 00000057-X-01040104.script	57	2	49	217	-	-	
+ 00000057-X-01040104.script	57	2	49	218	おうおう！　【来：き】てやったぞ！\nまずは【兄弟：きょうだい】の【杯：さかずき】を　かわそうじゃねえか！	"Ouaip ! Me voilà !
+ Trinquons d'abord pour sceller notre pacte de fraternité !"	
+-00000057-X-01040104.script	57	2	49	219	【交換相手】…　いいやつだった…。\nこんどは　おめえと【悪：あく】の【道：みち】をきわめるぜい！	"【Partenaire d'échange】 était un bon bougre...
++00000057-X-01040104.script	57	2	49	219	【交換相手】…　いいやつだった…。\nこんどは　おめえと【悪：あく】の【道：みち】をきわめるぜい！	"【交換相手】 était un bon bougre...
+ Cette fois, c'est avec toi que je vais régner sur le crime !"	
+ 00000057-X-01040104.script	57	2	49	220	ボクを【交換：こうかん】するとか　【魔：ま】が【差：さ】したのかな？\nでもきみとも　ともだちになれる【気：き】がする！	"M'avoir échangé... a-t-il été pris d'un coup de folie ?
+ Mais je sens qu'on va être de très bons amis !"	
+@@ -13937,7 +13938,7 @@ Hahaha ! Quel chef-d'œuvre d'humour !"
+ 00000057-X-01040104.script	57	2	49	232	-	-	
+ 00000057-X-01040104.script	57	2	49	233	あなたに【会：あ】えて　うれしいわぁ。\nねかせてあげないわよぉ！	"Je suis ravie de te rencontrer !
+ Je ne te laisserai pas dormir de la nuit !"	
+-00000057-X-01040104.script	57	2	49	234	【交換相手】は　いい【夢見：ゆめみ】てたわよぉ。\nあなたも　いい【夢見：ゆめみ】させて　あ・げ・る…。	"【Partenaire d'échange】 faisait de si doux songes...
++00000057-X-01040104.script	57	2	49	234	【交換相手】は　いい【夢見：ゆめみ】てたわよぉ。\nあなたも　いい【夢見：ゆめみ】させて　あ・げ・る…。	"【交換相手】 faisait de si doux songes...
+ Je vais t'offrir de magnifiques rêves... à toi aussi..."	
+ 00000057-X-01040104.script	57	2	49	235	-	-	
+ 00000057-X-01040104.script	57	2	49	236	【地味：じみ】だけど　【来：き】ちゃいました…。\nあっ　そんなに【注目：ちゅうもく】しないで…。	"Je suis bien discret, mais me voilà...
+@@ -13945,7 +13946,7 @@ Ah... ne me regardez pas avec tant d'insistance..."
+ 00000057-X-01040104.script	57	2	49	237	-	-	
+ 00000057-X-01040104.script	57	2	49	238	ふふふ…。　この【町：まち】では　【何人：なんにん】の【人：ひと】が\nせっしゃに【気：き】づけるかな？	"Hi hi hi... Combien de passants dans cette cité
+ remarqueront donc ma présence ?"	
+-00000057-X-01040104.script	57	2	49	239	【交換相手】が【気：き】づいたおかげで…\nきみに【会：あ】えた…。　うれしい…。	"Grâce à 【Partenaire d'échange】 qui m'a remarqué...
++00000057-X-01040104.script	57	2	49	239	【交換相手】が【気：き】づいたおかげで…\nきみに【会：あ】えた…。　うれしい…。	"Grâce à 【交換相手】 qui m'a remarqué...
+ j'ai pu te rencontrer... Quel bonheur..."	
+ 00000057-X-01040104.script	57	2	49	240	-	-	
+ 00000057-X-01040104.script	57	2	49	241	はじめまして～。　とりあえず\nじめじめした【場所：ばしょ】で　お【話：はな】ししよう～。	"Enchanté ! Et si nous allions papoter
+@@ -13960,15 +13961,15 @@ Navré d'avance si ça ne te plaît pas !"
+ comme la braise ! Enchanté !"	
+ 00000057-X-01040104.script	57	2	49	246	あぁん…　【捨：す】てられちゃった…。\nあなたは【見捨：みす】てないでくれる…？	"Oh... On m'a abandonné...
+ Tu ne vas pas me délaisser toi aussi, n'est-ce pas ?"	
+-00000057-X-01040104.script	57	2	49	247	【交換相手】といたころから\nきみが　うらやましかったんだー！	"Dès l'époque où j'étais avec 【Partenaire d'échange】,
++00000057-X-01040104.script	57	2	49	247	【交換相手】といたころから\nきみが　うらやましかったんだー！	"Dès l'époque où j'étais avec 【交換相手】,
+ je crevais de jalousie envers toi !"	
+ 00000057-X-01040104.script	57	2	49	248	あれ？　そろそろご【飯：はん】の【時間：じかん】じゃない？\nよし！　【今：いま】からきみの【家：いえ】に　【遊：あそ】びに【行：い】こう！	"Tiens ? Ce serait pas l'heure de manger, par hasard ?
+ Allez ! Je m'invite chez toi tout de suite !"	
+ 00000057-X-01040104.script	57	2	49	249	【外：そと】の【世界：せかい】…。　こわい…。\n【早：はや】くきみの【家：いえ】に　【引：ひ】きこもらせて…。	"Le monde extérieur... C'est si effrayant...
+ Vite, laisse-moi m'enfermer chez toi..."	
+-00000057-X-01040104.script	57	2	49	250	【交換相手】に【追：お】い【出：だ】されちゃった！\nいますぐ　きみのところにとじこめて！	"【Partenaire d'échange】 m'a mis à la porte !
++00000057-X-01040104.script	57	2	49	250	【交換相手】に【追：お】い【出：だ】されちゃった！\nいますぐ　きみのところにとじこめて！	"【交換相手】 m'a mis à la porte !
+ Enferme-moi chez toi sur-le-champ !"	
+-00000057-X-01040104.script	57	2	49	251	【交換相手】に【追：お】い【出：だ】されたの…。\nこれからはきみの【家：いえ】に　【泊：と】まらせてくれる？	"【Partenaire d'échange】 m'a chassé de chez lui...
++00000057-X-01040104.script	57	2	49	251	【交換相手】に【追：お】い【出：だ】されたの…。\nこれからはきみの【家：いえ】に　【泊：と】まらせてくれる？	"【交換相手】 m'a chassé de chez lui...
+ Tu me laisses loger chez toi désormais ?"	
+ 00000057-X-01040104.script	57	2	49	252	【少：すこ】しだけ　びんぼうにしちゃうけど\nそれでも　【仲良：なかよ】くしようね～！	"Je vais te rendre un tout petit peu fauché,
+ mais soyons quand même de grands amis !"	
+@@ -13980,7 +13981,7 @@ Euh... C'est vrai, tu es sûr... ?"
+ 00000057-X-01040104.script	57	2	49	256	ごめん…。　もう【少：すこ】しで\n【本：ほん】　【読：よ】み【終：お】わるから　ちょっと【待：ま】って…。	"Pardon... J'ai presque fini de lire mon livre,
+ attends-moi juste une petite minute..."	
+ 00000057-X-01040104.script	57	2	49	257	-	-	
+-00000057-X-01040104.script	57	2	49	258	【交換相手】に【嫌：きら】われたのか！？\nお【前：まえ】は　オレのこと【嫌：ぎら】いにならねえよな！？	"【Partenaire d'échange】 ne pouvait plus me voir en peinture ?!
++00000057-X-01040104.script	57	2	49	258	【交換相手】に【嫌：きら】われたのか！？\nお【前：まえ】は　オレのこと【嫌：ぎら】いにならねえよな！？	"【交換相手】 ne pouvait plus me voir en peinture ?!
+ Tu ne vas pas me détester toi aussi, pas vrai ?!"	
+ 00000057-X-01040104.script	57	2	49	259	【遠：とお】いところから　やってきて【疲：つか】れた！\nもうやだ！　【歩：ある】きたくねえ！　	"Je viens de super loin, j'suis crevé !
+ J'en peux plus, je ne ferai pas un pas de plus !"	
+@@ -14000,13 +14001,13 @@ au moins me donner une petite piécette !"
+ Tu dois être une sacrée canaille, n'est-ce pas... ?"	
+ 00000057-X-01040104.script	57	2	49	268	-	-	
+ 00000057-X-01040104.script	57	2	49	269	キュピーン！　【運命感：うんめいかん】じたよ！\n【交換相手】より　【仲良：なかよ】くなれるかも！	"Tchiiiiing ! C'est le coup de foudre du destin !
+-On sera peut-être encore plus proches qu'avec 【Partenaire d'échange】 !"	
++On sera peut-être encore plus proches qu'avec 【交換相手】 !"	
+ 00000057-X-01040104.script	57	2	49	270	【運命：うんめい】にみちびかれて　やってきました。\n【最高：さいこう】の　ともだちになりましょう。	"Le destin a guidé mes pas jusqu'à vous.
+ Devenons les meilleurs amis du monde."	
+ 00000057-X-01040104.script	57	2	49	271	-	-	
+ 00000057-X-01040104.script	57	2	49	272	ぼくを　【交換：こうかん】してもらえるなんて\nきみ　【最高：さいこう】にラッキーだね！	"Avoir la chance de m'obtenir par échange,
+ tu es vraiment le plus chanceux du monde !"	
+-00000057-X-01040104.script	57	2	49	273	【交換相手】の【所：ところ】から【来：き】たのだ！\nりゅーくんと　たくさん【遊：あそ】んでほしいのだ！	"Je viens de chez 【Partenaire d'échange】 !
++00000057-X-01040104.script	57	2	49	273	【交換相手】の【所：ところ】から【来：き】たのだ！\nりゅーくんと　たくさん【遊：あそ】んでほしいのだ！	"Je viens de chez 【交換相手】 !
+ J'espère que tu vas beaucoup jouer avec Dracounet !"	
+ 00000057-X-01040104.script	57	2	49	274	-	-	
+ 00000057-X-01040104.script	57	2	49	275	おまえの【力：ちから】がどれほどか　【今：いま】から【楽：たの】しみだ！\nともに【力：ちから】をふるおうぞ！	"J'ai hâte de voir l'étendue de ta force !
+@@ -14015,7 +14016,7 @@ Unissons notre puissance au combat !"
+ Je marcherai à tes côtés !"	
+ 00000057-X-01040104.script	57	2	49	277	お【前：まえ】なんか【嫌：きら】いだー！\nでも　【付：つ】いていってやるよー！	"Je te déteste, toi !
+ Mais je vais quand même te suivre !"	
+-00000057-X-01040104.script	57	2	49	278	【交換相手】め！　うらんでやるー！\nうらみが【晴：は】れるまで　お【前：まえ】といるぞー！	"Maudit soit 【Partenaire d'échange】 ! Je me vengerai !
++00000057-X-01040104.script	57	2	49	278	【交換相手】め！　うらんでやるー！\nうらみが【晴：は】れるまで　お【前：まえ】といるぞー！	"Maudit soit 【交換相手】 ! Je me vengerai !
+ Je reste avec toi jusqu'à ce que ma rancœur disparaisse !"	
+ 00000057-X-01040104.script	57	2	49	279	くそー！　なんで【交換：こうかん】されたんだよ！\nなんだよ！　いい【町：まち】じゃねーか！	"Flûte alors ! Pourquoi m'a-t-on échangé ?!
+ Mais attends... elle est plutôt chouette, cette ville !"	
+@@ -14030,14 +14031,14 @@ et allons faire la fête à fond les ballons !"
+ toi ! Tu me plais bien !"	
+ 00000057-X-01040104.script	57	2	49	285	-	-	
+ 00000057-X-01040104.script	57	2	49	286	お【前：まえ】が　【新：あたら】しいともだちやな？\n【交換相手】の【話：はなし】　【聞：き】かせたるで！	"C'est toi mon nouveau pote ?
+-J'ai plein de trucs croustillants à te raconter sur 【Partenaire d'échange】 !"	
++J'ai plein de trucs croustillants à te raconter sur 【交換相手】 !"	
+ 00000057-X-01040104.script	57	2	49	287	【朝：あさ】ごはんは　バナナ【派：は】…？\nそれなら　ともだちになれるな！	"Tu es du genre à manger des bananes au petit déj... ?
+ Alors on va super bien s'entendre !"	
+ 00000057-X-01040104.script	57	2	49	288	【交換：こうかん】の【儀式：ぎしき】は　ワシがしきるんじゃ！\nって　もう【終：お】わっとるんじゃ！	"C'est moi qui préside le rituel d'échange !
+ Hein ? Quoi, c'est déjà fini ?!"	
+ 00000057-X-01040104.script	57	2	49	289	【正々堂々：せいせいどうどう】の　【交換：こうかん】の【儀式：ぎしき】　みごとじゃ！\nお【主：ぬし】とは　うまくやっていけそうじゃ！	"Un rituel d'échange en bonne et due forme, splendide !
+ Je sens qu'on va faire une excellente équipe !"	
+-00000057-X-01040104.script	57	2	49	290	フン！　もう【交換相手】など【知：し】らん！\nおぬしについて【行：い】っても　いいかのぅ…。	"Pfff ! Je me fiche bien de 【Partenaire d'échange】 désormais !
++00000057-X-01040104.script	57	2	49	290	フン！　もう【交換相手】など【知：し】らん！\nおぬしについて【行：い】っても　いいかのぅ…。	"Pfff ! Je me fiche bien de 【交換相手】 désormais !
+ Dis, je peux rester avec toi... ?"	
+ 00000057-X-01040104.script	57	2	49	291	-	-	
+ 00000057-X-01040104.script	57	2	49	292	この【町：まち】は　いい【町：まち】だな…。\n【連：つ】れてきてくれて　【感謝：かんしゃ】するぞ。	"C'est une très belle ville que voici...
+@@ -14058,7 +14059,7 @@ Je vais vous faire éclore tout ça en un clin d'œil !"
+ Tu possèdes une puissance digne du plus fort !"	
+ 00000057-X-01040104.script	57	2	49	300	がんばりますけど　【役：やく】に【立：た】たないですよ…。\nなにせ　まだ【子供：こども】ですから。	"Je ferai de mon mieux, mais je ne serai pas très utile...
+ Après tout, je ne suis encore qu'un enfant."	
+-00000057-X-01040104.script	57	2	49	301	【交換相手】どのに　たのまれて\nお【主：ぬし】の　おそうじ【当番：とうばん】になったでござる！	"Sur demande de 【Partenaire d'échange】, me voici
++00000057-X-01040104.script	57	2	49	301	【交換相手】どのに　たのまれて\nお【主：ぬし】の　おそうじ【当番：とうばん】になったでござる！	"Sur demande de 【交換相手】, me voici
+ nommé responsable du ménage à votre service !"	
+ 00000057-X-01040104.script	57	2	49	302	かってに【交換：こうかん】するなんて　おこだぞ！\n【遊：あそ】んでくれなきゃ　【激：げき】おこだ！	"M'échanger sans me demander, c'est pas sympa !
+ Si tu ne joues pas avec moi, je vais être super fâché !"	
+@@ -14081,14 +14082,14 @@ Y a-t-il une rizière à moi par ici... ?"
+ Tous en chœur : Victoooriiiie !"	
+ 00000057-X-01040104.script	57	2	49	313	うーむ！　この【町：まち】はまだ【掃除：そうじ】が【足：た】りんな！\nわしがいれば　キレイになるぞ！	"Humph ! Cette ville manque cruellement de propreté !
+ Avec moi dans les parages, tout va briller comme un sou neuf !"	
+-00000057-X-01040104.script	57	2	49	314	【交換相手】はオレの【実力：じつりょく】を【知：し】らない。\nきみに【見：み】せるときを　【待：ま】っていたからな。	"【Partenaire d'échange】 ignorait ma véritable force.
++00000057-X-01040104.script	57	2	49	314	【交換相手】はオレの【実力：じつりょく】を【知：し】らない。\nきみに【見：み】せるときを　【待：ま】っていたからな。	"【交換相手】 ignorait ma véritable force.
+ J'attendais simplement le bon moment pour te la dévoiler."	
+ 00000057-X-01040104.script	57	2	49	315	お【主：ぬし】の【気合：きあい】が　【伝：つた】わってきたぞ！\n【顔：かお】が【熱：あつ】くなるくらいにな！	"Toute ta détermination me saute aux yeux !
+ J'en ai le visage brûlant de ferveur !"	
+ 00000057-X-01040104.script	57	2	49	316	-	-	
+ 00000057-X-01040104.script	57	2	49	317	この【町：まち】に　【鬼：おに】はおるかのぉ？\nワイがぜんぶ【食：く】っちまうでぇ！	"Y a-t-il des démons dans cette ville ?
+ Je vais tous les gober d'une seule bouchée !"	
+-00000057-X-01040104.script	57	2	49	318	【交換相手】の【命：いのち】もうまそうやったが\nおまえの【命：いのち】も　うまそうやんけぇ！	"La vie de 【Partenaire d'échange】 avait l'air succulente,
++00000057-X-01040104.script	57	2	49	318	【交換相手】の【命：いのち】もうまそうやったが\nおまえの【命：いのち】も　うまそうやんけぇ！	"La vie de 【交換相手】 avait l'air succulente,
+ mais la tienne m'a l'air tout aussi appétissante !"	
+ 00000057-X-01040104.script	57	2	49	319	うお～！　この【町：まち】も【風：かぜ】が【強：つよ】いな！\nひっくり【返：かえ】っちまうぜ！	"Wouah ! Le vent souffle fort dans cette ville aussi !
+ Je vais finir les quatre fers en l'air !"	
+@@ -14097,7 +14098,7 @@ Je peux rester avec toi, dis... ?"
+ 00000057-X-01040104.script	57	2	49	321	-	-	
+ 00000057-X-01040104.script	57	2	49	322	【来：き】ちゃってゴメン！　いったんゴメン！\nあやまるから　きみの【町：まち】に【住：す】ませて！	"Pardon d'avoir débarqué ! Déso, tellement déso !
+ Puisque je m'excuse, laisse-moi habiter dans ta ville !"	
+-00000057-X-01040104.script	57	2	49	323	【交換相手】のマネは　マスターしたよ！\n【次：つぎ】は　キミのモノマネだー！	"J'ai maîtrisé l'imitation de 【Partenaire d'échange】 !
++00000057-X-01040104.script	57	2	49	323	【交換相手】のマネは　マスターしたよ！\n【次：つぎ】は　キミのモノマネだー！	"J'ai maîtrisé l'imitation de 【交換相手】 !
+ Maintenant, c'est ton tour d'être copié !"	
+ 00000057-X-01040104.script	57	2	49	324	ボクは【交換：こうかん】でしか【手：て】に【入：はい】らない　レア【妖怪：ようかい】！\nな～んてね！　ウッソ～～！	"Je suis un Yo-kai ultra rare qu'on ne peut obtenir
+ que par échange ! Mais non, je rigole ! C'était un bobard !"	
+@@ -14108,7 +14109,7 @@ Je vais te suivre de ce pas !"
+ 00000057-X-01040104.script	57	2	49	327	うふふ…　ここは【好：す】きよ…。\nあなたもね…。	"Héhéhé... J'aime beaucoup cet endroit...
+ Et toi aussi, d'ailleurs..."	
+ 00000057-X-01040104.script	57	2	49	328	-	-	
+-00000057-X-01040104.script	57	2	49	329	【交換相手】の【所：ところ】から　【屋台：やたい】を【引：ひ】いて\n【来：き】たよ～。　まずはおでんを【召：め】し【上：あ】がれ～。	"J'ai tiré ma charrette depuis chez 【Partenaire d'échange】 !
++00000057-X-01040104.script	57	2	49	329	【交換相手】の【所：ところ】から　【屋台：やたい】を【引：ひ】いて\n【来：き】たよ～。　まずはおでんを【召：め】し【上：あ】がれ～。	"J'ai tiré ma charrette depuis chez 【交換相手】 !
+ Pour commencer, goûte donc un bon bol d'oden !"	
+ 00000057-X-01040104.script	57	2	49	330	こんないい【町：まち】に　やってきて\nどうも　すいませんでしたー！！	"Débarquer dans une si charmante ville...
+ Je suis mille fois navrééé !!"	
+@@ -14136,7 +14137,7 @@ je jure de te protéger au péril de ma vie !"
+ Je veux foncer à toute vapeur à travers cette ville !"	
+ 00000057-X-01040104.script	57	2	49	342	あんたとの【運命：うんめい】の【出会：であ】い…\nこの【目：め】に　しっかり【刻：きざ】みつけたぜぇ…。	"Notre rencontre prédestinée...
+ Je l'ai gravée à jamais au fond de mes yeux..."	
+-00000057-X-01040104.script	57	2	49	343	あんた　【交換相手】の【目：め】よりも\nキラめいてて　ステキだね～！	"Tes yeux brillent encore plus que ceux de 【Partenaire d'échange】 !
++00000057-X-01040104.script	57	2	49	343	あんた　【交換相手】の【目：め】よりも\nキラめいてて　ステキだね～！	"Tes yeux brillent encore plus que ceux de 【交換相手】 !
+ C'est vraiment magnifique !"	
+ 00000057-X-01040104.script	57	2	49	344	-	-	
+ 00000057-X-01040104.script	57	2	49	345	キミ　お【肉：にく】はちゃんと【食：く】ってる？\nがっついてこうぜ！	"Dis, tu manges assez de viande ?
+@@ -14147,7 +14148,7 @@ je serai toujours là pour parer tous les coups !"
+ le plus longtemps d'aller aux toilettes !"	
+ 00000057-X-01040104.script	57	2	49	348	のびのびとした　いい【町：まち】だな！\nこれから　よろしくな！	"Quelle charmante ville, si paisible et aérée !
+ Comptons l'un sur l'autre désormais !"	
+-00000057-X-01040104.script	57	2	49	349	【交換相手】の【家：いえ】に【帰：かえ】りたい…。\nでも　たまには【違：ちが】う【家：いえ】もいいか。	"Je veux rentrer chez 【Partenaire d'échange】...
++00000057-X-01040104.script	57	2	49	349	【交換相手】の【家：いえ】に【帰：かえ】りたい…。\nでも　たまには【違：ちが】う【家：いえ】もいいか。	"Je veux rentrer chez 【交換相手】...
+ Mais bon, changer de maison de temps en temps, c'est pas si mal."	
+ 00000057-X-01040104.script	57	2	49	350	キミに【会：あ】えて　【笑顔：えがお】になったよ～。\n【無表情：むひょうじょう】なんだけどね～。	"Te rencontrer me donne le sourire !
+ Même si mon visage reste de marbre, évidemment."	
+@@ -14181,7 +14182,7 @@ Ravi de faire votre connaissance, clic-clac-clic♪"
+ 00000057-X-01040104.script	57	2	49	366	カラカラ…　【我：わ】が【輩：はい】を【捨：す】てるとは…。\nこの【恨：うら】み　ともに【晴：は】らそうぞ…。	"Clic-clac... Oser m'abandonner de la sorte...
+ Unissons nos forces pour assouvir ma rancœur..."	
+ 00000057-X-01040104.script	57	2	49	367	-	-	
+-00000057-X-01040104.script	57	2	49	368	【交換相手】の【町：まち】から　【来：き】ました。\nこれから　お【世話：せわ】になります。	"Je viens tout droit de la ville de 【Partenaire d'échange】.
++00000057-X-01040104.script	57	2	49	368	【交換相手】の【町：まち】から　【来：き】ました。\nこれから　お【世話：せわ】になります。	"Je viens tout droit de la ville de 【交換相手】.
+ Je vous remercie d'avance pour votre accueil."	
+ 00000057-X-01040104.script	57	2	49	369	-	-	
+ 00000057-X-01040104.script	57	2	49	370	ここが【新：あたら】しい【町：まち】だドン！？\nここでも　【太鼓：たいこ】の【魅力：みりょく】を【伝：つた】えるドン！	"C'est donc ici ma nouvelle ville, don ?!
+@@ -14198,7 +14199,7 @@ Kyahaha ! Allez, viens jouer !"
+ 00000057-X-01040104.script	57	2	49	376	-	-	
+ 00000057-X-01040104.script	57	2	49	377	【晴：は】れてキミも　ボクのともだちさ！\nこれからは【毎日：まいにち】　【晴：は】れだよ！	"Te voilà officiellement mon grand ami !
+ Désormais, ce sera grand soleil tous les jours !"	
+-00000057-X-01040104.script	57	2	49	378	へーい！　【交換相手】の【事務所：じむしょ】から\n【移籍：いせき】してきたよ！　プロデュースよろしく！	"Hééé ! J'ai été transféré depuis l'agence de 【Partenaire d'échange】 !
++00000057-X-01040104.script	57	2	49	378	へーい！　【交換相手】の【事務所：じむしょ】から\n【移籍：いせき】してきたよ！　プロデュースよろしく！	"Hééé ! J'ai été transféré depuis l'agence de 【交換相手】 !
+ À toi de gérer ma carrière de star !"	
+ 00000057-X-01040104.script	57	2	49	379	つぎの【患者：かんじゃ】さんは　あなたですか？\nわたしが【癒：い】やしてあげますね！	"Êtes-vous mon prochain patient ?
+ Je vais prendre bien soin de vous soigner !"	
+@@ -14210,23 +14211,23 @@ Je vais balayer tous vos soucis d'un souffle !"
+ 00000057-X-01040104.script	57	2	49	383	やあ！　【幸：しあわ】せを【届：とど】けにきたよ！\nきみも　この【町：まち】も　みんなハッピー！	"Salut ! Je viens vous apporter le bonheur !
+ Toi, cette ville et tout le monde sera heureux !"	
+ 00000057-X-01040104.script	57	2	49	384	お【金：かね】がなくても　ここに【来：こ】れた！\n【交換相手】と　きみに　【感謝：かんしゃ】するぜ！	"Pas besoin d'argent pour arriver jusqu'ici !
+-Un grand merci à toi et à 【Partenaire d'échange】 !"	
++Un grand merci à toi et à 【交換相手】 !"	
+ 00000057-X-01040104.script	57	2	49	385	きみのもとに【来：く】ると　【分：わ】かっていた！\nオレの【予言：よげん】はぜったいに【当：あ】たるんだ！	"Je savais que je viendrais chez toi !
+ Mes prédictions ne se trompent absolument jamais !"	
+ 00000057-X-01040104.script	57	2	49	386	キリリ！　【麒麟：きりん】だよ！\n【麒麟：きりん】が【来：き】たからには　この【町：まち】はずっと【平和：へいわ】さ！	"Hihahiha... C'est une bien belle ville.
+ Je vais t'en faire profiter toi aussi."	
+ 00000057-X-01040104.script	57	2	49	387	イッポーン！\nキミのこと　【信：しん】じるよ！　よろしく！	"Je vais dévorer toutes les ombres de cette ville !
+ Y compris la tienne, bien évidemment !"	
+-00000057-X-01040104.script	57	2	49	388	【交換相手】の【旦那：だんな】のところから\n【来：き】やした。　よろしくたのみます。	"Je viens de chez ce bon vieux 【Partenaire d'échange】.
++00000057-X-01040104.script	57	2	49	388	【交換相手】の【旦那：だんな】のところから\n【来：き】やした。　よろしくたのみます。	"Je viens de chez ce bon vieux 【交換相手】.
+ Je me mets à votre service, patron !"	
+ 00000057-X-01040104.script	57	2	49	389	-	-	
+ 00000057-X-01040104.script	57	2	49	390	ともだち？　きみが？\nじゃあ　【一緒：いっしょ】に【徹夜：てつや】しようよー。	"Tu veux passer un pacte avec moi, miaou ?
+ ... N'aie crainte, je ne te volerai rien du tout, miaou."	
+-00000057-X-01040104.script	57	2	49	391	あっ　【交換相手】に【借：か】りたマンガ…\nまだ【返：かえ】してないけど…　まあいっか！	"Ah zut, le manga que j'ai emprunté à 【Partenaire d'échange】...
++00000057-X-01040104.script	57	2	49	391	あっ　【交換相手】に【借：か】りたマンガ…\nまだ【返：かえ】してないけど…　まあいっか！	"Ah zut, le manga que j'ai emprunté à 【交換相手】...
+ Je ne l'ai pas encore rendu... mais bon, tant pis !"	
+ 00000057-X-01040104.script	57	2	49	392	ここの【町：まち】にも　いい【草：くさ】はえてそうですね…。\nごいっしょにお【食事：しょくじ】でも　どうですか？	"Un nouvel ami, youpiii !
+ On commence tout de suite : viens jouuuuer !"	
+-00000057-X-01040104.script	57	2	49	393	【交換相手】はどこ【行：い】ったし！\nもう【待：ま】てんし！　きみについてくぞ！	"Où est passé 【Partenaire d'échange】 ?!
++00000057-X-01040104.script	57	2	49	393	【交換相手】はどこ【行：い】ったし！\nもう【待：ま】てんし！　きみについてくぞ！	"Où est passé 【交換相手】 ?!
+ J'en avais marre d'attendre, alors je te suis !"	
+ 00000057-X-01040104.script	57	2	49	394	どこに【行：い】くかも　ひとまかせ～。\nこれからは　お【主：ぬし】を【頼：たよ】らせてもらうぞ～。	"Maintenant que je suis là, je vais faire de toi
+ la plus grande star de toute la région !"	
+@@ -14242,16 +14243,16 @@ Je m'en remets à vous."
+ Allez, suis-moi sans broncher !"	
+ 00000057-X-01040104.script	57	2	49	400	どんどろろ～ん。\nこれからはお【主：ぬし】に　ついてくぞ～。	"Hihi... Devenir mon ami,
+ c'est un privilège que beaucoup t'envient."	
+-00000057-X-01040104.script	57	2	49	401	きみ　【交換相手】より【毛：け】が【多：おお】いね…。\n【仲良：なかよ】くなれそうだよ～…。	"Dis, tu es bien plus poilu que 【Partenaire d'échange】...
++00000057-X-01040104.script	57	2	49	401	きみ　【交換相手】より【毛：け】が【多：おお】いね…。\n【仲良：なかよ】くなれそうだよ～…。	"Dis, tu es bien plus poilu que 【交換相手】...
+ Je sens qu'on va super bien s'entendre..."	
+ 00000057-X-01040104.script	57	2	49	402	【毛：け】をひっこ【抜：ぬ】いてやる…。\nちょっぴり　【痛：いた】いぞ…。	"Tu veux bien être mon ami ?
+ Héhéhé... Je suis trop content !"	
+ 00000057-X-01040104.script	57	2	49	403	-	-	
+-00000057-X-01040104.script	57	2	49	404	【交換相手】とお【別：わか】れしたくナイよ！\nでも【新：あたら】しいともだち　【嫌：いや】じゃナイよ！	"Je ne voulais pas quitter 【Partenaire d'échange】 !
++00000057-X-01040104.script	57	2	49	404	【交換相手】とお【別：わか】れしたくナイよ！\nでも【新：あたら】しいともだち　【嫌：いや】じゃナイよ！	"Je ne voulais pas quitter 【交換相手】 !
+ Mais un nouvel ami, ça ne me déplaît pas du tout !"	
+ 00000057-X-01040104.script	57	2	49	405	ワシが【来：き】たから　ぬしは【最強：さいきょう】じゃ！\nワシはすごいからのう！	"Wouaaah ! C'est donc ça, ma nouvelle terre promise ?!
+ Je vais tout dévaster sur mon passage !"	
+-00000057-X-01040104.script	57	2	49	406	あなた　【交換相手】のともだち…？\nじゃあ【一緒：いっしょ】に　【遊：あそ】んでくれるのね？	"Tu es l'ami de 【Partenaire d'échange】... ?
++00000057-X-01040104.script	57	2	49	406	あなた　【交換相手】のともだち…？\nじゃあ【一緒：いっしょ】に　【遊：あそ】んでくれるのね？	"Tu es l'ami de 【交換相手】... ?
+ Alors tu vas jouer avec moi, n'est-ce pas ?"	
+ 00000057-X-01040104.script	57	2	49	407	【来：き】たはいいけど～。　【帰：かえ】ろうかな～。\nここにいようかな～。　どうしようかな～。	"Adieu le train-train quotidien assommant !
+ Avec toi, je sens qu'on ne va pas s'ennuyer !"	
+@@ -14264,7 +14265,7 @@ Fais donc grand usage de mon incroyable puissance !"
+ 00000057-X-01040104.script	57	2	49	411	ワシがいれば　【毛：け】のことは\n【何：なん】にも【心配：しんぱい】いらないぞ～。	"C'est donc ici mon nouveau château... ?
+ Ma foi, ce n'est pas si mal !"	
+ 00000057-X-01040104.script	57	2	49	412	-	-	
+-00000057-X-01040104.script	57	2	49	413	【交換相手】のこと　【呪：のろ】っちゃった！\n【私：わたし】のこと　【大事：だいじ】にしない【人：ひと】は【呪：のろ】っちゃうぞ！	"J'ai jeté une malédiction sur 【Partenaire d'échange】 !
++00000057-X-01040104.script	57	2	49	413	【交換相手】のこと　【呪：のろ】っちゃった！\n【私：わたし】のこと　【大事：だいじ】にしない【人：ひと】は【呪：のろ】っちゃうぞ！	"J'ai jeté une malédiction sur 【交換相手】 !
+ Quiconque ne prend pas soin de moi sera maudit !"	
+ 00000057-X-01040104.script	57	2	49	414	【助太刀：すけだち】にまいったぞ。\n【吾輩：わがはい】のうでを　ぞんぶんにふるってやろう。	"T'es un sacré numéro, toi !
+ Viens faire les quatre cents coups avec moi !"	
+@@ -14280,7 +14281,7 @@ Viens manger le goûter avec moi !"
+ Tu es quelqu'un de vraiment charmant."	
+ 00000057-X-01040104.script	57	2	49	420	【思：おも】い【出：だ】したわーい！\nおぬしと【会：あ】ったのは…　【今日：きょう】が【初：はじ】めてじゃ！	"Tu as du cran, toi !
+ Je te prends sous mon aile comme disciple !"	
+-00000057-X-01040104.script	57	2	49	421	おぬしは　【活：い】き【活：い】きしとるのう！\n【交換相手】の【見込：みこ】んだ【通：とお】りじゃ！	Tu débordes d'énergie, dis-moi !\nC'est exactement ce que pensait 【Partenaire d'échange】 !	
++00000057-X-01040104.script	57	2	49	421	おぬしは　【活：い】き【活：い】きしとるのう！\n【交換相手】の【見込：みこ】んだ【通：とお】りじゃ！	Tu débordes d'énergie, dis-moi !\nC'est exactement ce que pensait 【交換相手】 !	
+ 00000057-X-01040104.script	57	2	49	422	ここどこだよー！　ムッカァー！\n【心細：こころぼそ】いじゃねえかよー！	"Je suis prêt à me plier en quatre pour vous !
+ N'hésitez pas à demander ce que vous voulez !"	
+ 00000057-X-01040104.script	57	2	49	423	キャッ！　あなた　だあれ？\nそんなに【見：み】ないで　【緊張：きんちょう】しちゃうわっ！	"Héhéhé... Quels trésors se cachent par ici ?
+@@ -14299,29 +14300,29 @@ Huuuum... On remettra ça à plus tard~"
+ Comptez sur moi, bande de veinards, RRAAAH !"	
+ 00000057-X-01040104.script	57	2	49	431	この【町：まち】　【知：し】ってる【気：き】がするのう…。\n【思：おも】い【出：だ】した！　【昨日来：きのうき】たんじゃった！	"Cette ville me rappelle quelque chose...
+ Ah, ça me revient ! J'y étais encore hier !"	
+-00000057-X-01040104.script	57	2	49	432	【交換相手】まじウケる～！！\nあんたも【激：げき】ヤバ～！　【写真：しゃしん】とっていい？	"【Partenaire d'échange】 est trop hilarant !
++00000057-X-01040104.script	57	2	49	432	【交換相手】まじウケる～！！\nあんたも【激：げき】ヤバ～！　【写真：しゃしん】とっていい？	"【交換相手】 est trop hilarant !
+ Et toi tu as un flow de dingue ! Je peux prendre un selfie ?"	
+ 00000057-X-01040104.script	57	2	49	433	あなた　【最高：さいこう】にいいかんじ！\n【交換相手】より　ビクビクしちゃう！	"Tu es tellement génial !
+-Tu me fais encore plus frissonner que 【Partenaire d'échange】 !"	
++Tu me fais encore plus frissonner que 【交換相手】 !"	
+ 00000057-X-01040104.script	57	2	49	434	いやん！　あなたに【会：あ】えて\n【産：う】まれそうになっちゃった！	"Oh là là ! Te rencontrer m'a tellement émue
+ que j'ai failli accoucher sur place !"	
+ 00000057-X-01040104.script	57	2	49	435	―	―	
+ 00000057-X-01040104.script	57	2	49	436	うふふ！　【交換相手】の\nネタバレ　【聞：き】かせてあげますわ！	"Ouhouhou ! Laissez-moi vous divulgâcher
+-tous les secrets de 【Partenaire d'échange】 !"	
+-00000057-X-01040104.script	57	2	49	437	【交換相手】のうんちく【聞：き】きたい？\nぼくが　たっぷり【聞：き】かせてあげるよ！	"Tu veux des anecdotes croustillantes sur 【Partenaire d'échange】 ?
++tous les secrets de 【交換相手】 !"	
++00000057-X-01040104.script	57	2	49	437	【交換相手】のうんちく【聞：き】きたい？\nぼくが　たっぷり【聞：き】かせてあげるよ！	"Tu veux des anecdotes croustillantes sur 【交換相手】 ?
+ Je vais t'en raconter un bon paquet !"	
+ 00000057-X-01040104.script	57	2	49	438	ぺろぺろぺろぺろ　やまタンじゃ！\nこれからよろしくなのじゃ！	"Léchouille léchouille, c'est moi, Slurpent !
+ Enchanté de faire équipe avec toi !"	
+ 00000057-X-01040104.script	57	2	49	439	-	-	
+ 00000057-X-01040104.script	57	2	49	440	-	-	
+ 00000057-X-01040104.script	57	2	49	441	-	-	
+-00000057-X-01040104.script	57	2	49	442	【交換相手】は【厄介：やっかい】なやつだったぞ～。\nキミも【厄介：やっかい】そうで　いいやつだな～。	"【Partenaire d'échange】 était un drôle d'énergumène~
++00000057-X-01040104.script	57	2	49	442	【交換相手】は【厄介：やっかい】なやつだったぞ～。\nキミも【厄介：やっかい】そうで　いいやつだな～。	"【交換相手】 était un drôle d'énergumène~
+ Tu m'as l'air tout aussi casse-pieds, parfait !"	
+-00000057-X-01040104.script	57	2	49	443	【交換相手】も【不快：ふかい】だったけど\nあなたもかなり【不快：ふかい】ね…　フフフ。	"【Partenaire d'échange】 était fort désagréable,
++00000057-X-01040104.script	57	2	49	443	【交換相手】も【不快：ふかい】だったけど\nあなたもかなり【不快：ふかい】ね…　フフフ。	"【交換相手】 était fort désagréable,
+ mais tu l'es tout autant... Héhéhé."	
+-00000057-X-01040104.script	57	2	49	444	【交換相手】が　おめぇのこと\n【豪快：ごうかい】って【言：い】ってただよ！　【楽：たの】しみだー！	"【Partenaire d'échange】 m'a dit que t'étais
++00000057-X-01040104.script	57	2	49	444	【交換相手】が　おめぇのこと\n【豪快：ごうかい】って【言：い】ってただよ！　【楽：たの】しみだー！	"【交換相手】 m'a dit que t'étais
+ un vrai bon vivant, mon gars ! J'ai hâte de voir ça !"	
+-00000057-X-01040104.script	57	2	49	445	お【主：ぬし】と【交換相手】　どちらが【難解：なんかい】か\nみきわめるのが　【楽：たの】しみじゃのう。	"J'ai hâte de voir qui de toi ou de 【Partenaire d'échange】
++00000057-X-01040104.script	57	2	49	445	お【主：ぬし】と【交換相手】　どちらが【難解：なんかい】か\nみきわめるのが　【楽：たの】しみじゃのう。	"J'ai hâte de voir qui de toi ou de 【交換相手】
+ est le plus insondable casse-tête."	
+ 00000057-X-01040104.script	57	2	49	446	【前：まえ】いた【町：まち】でも　いろいろ【壊：こわ】したが\nここでは【何：なに】を【破壊：はかい】しようか…　フフ。	"J'ai cassé pas mal de trucs dans mon ancienne ville.
+ Qu'est-ce que je vais pouvoir démolir ici... ? Héhé."	
+@@ -14350,7 +14351,7 @@ L'aventure promet d'être palpitante, miaou !"
+ 00000057-X-01040104.script	57	2	49	458	はなほじ～ん。\nよろしくたのむじ～ん。	"Je me cure le nez...
+ Compte sur moi, sniiif..."	
+ 00000057-X-01040104.script	57	2	49	459	【交換相手】に【負：ま】けない\nいいガッツしてんじゃん！　【気：き】に【入：い】ったぜ！	"Tu as une sacrée dose de cran, au moins autant
+-que 【Partenaire d'échange】 ! Tu me plais bien !"	
++que 【交換相手】 ! Tu me plais bien !"	
+ 00000057-X-01040104.script	57	2	49	460	お【前：まえ】　ガッツ【仮面知：かめんし】ってるか？\n【今日：きょう】からいっしょに　ポーズの【特訓：とっくん】だ！	"Tu connais le Masque du Courage ?
+ Dès aujourd'hui, on s'entraîne aux poses héroïques !"	
+ 00000057-X-01040104.script	57	2	49	461	あっか～ん！　【我：われ】の【力：ちから】に\nひれ【伏：ふ】すのじゃあ～！！！	Gaaah ! Prosternez-vous devant\nma puissance légendaire !!!	
+@@ -14358,7 +14359,7 @@ Dès aujourd'hui, on s'entraîne aux poses héroïques !"
+ 00000057-X-01040104.script	57	2	49	463	くろ～ん！　【次：つぎ】の【戦場：せんじょう】はどこじゃぁ！？\n【我：われ】が【破壊：はかい】しつくしてやるぞ！！！	Grrrôôôn ! Où est le prochain champ de bataille ?!\nJe vais tout anéantir sur mon passage !!!	
+ 00000057-X-01040104.script	57	2	49	464	この【町：まち】にいても…　いいのか…？\nギスギスしちゃうぞ…？	"Je peux vraiment rester dans cette ville... ?
+ Ça risque de créer des tensions..."	
+-00000057-X-01040104.script	57	2	49	465	ハハ～ン…　きみが【交換相手】の…。\nきみならギスギスしないかな…。	"Ahaha... Tu es donc l'ami de 【Partenaire d'échange】...
++00000057-X-01040104.script	57	2	49	465	ハハ～ン…　きみが【交換相手】の…。\nきみならギスギスしないかな…。	"Ahaha... Tu es donc l'ami de 【交換相手】...
+ J'espère qu'il n'y aura pas trop de malaise avec toi..."	
+ 00000057-X-01040104.script	57	2	49	466	どこでも【寝：ね】れるブー。\nここも　【寝心地：ねごこち】いいブー。	"Je peux dormir n'importe où, groin.
+ On est super bien pour roupiller ici aussi, groin."	
+@@ -14366,13 +14367,13 @@ On est super bien pour roupiller ici aussi, groin."
+ Allez, tous en chœur : Rassera~ Rassera~ !"	
+ 00000057-X-01040104.script	57	2	49	468	おめぇもなかなか　【粋：いき】な【顔：かお】つきだな！\nこれから　【楽：たの】しみだぜい！	"Tu as une bonne bouille pleine de panache, toi !
+ On va bien rigoler ensemble !"	
+-00000057-X-01040104.script	57	2	49	469	【交換相手】は　【粋：いき】なやつだったぜ！\nてめぇのことも　【見守：みまも】ってやる！	"【Partenaire d'échange】 était un type plein de panache !
++00000057-X-01040104.script	57	2	49	469	【交換相手】は　【粋：いき】なやつだったぜ！\nてめぇのことも　【見守：みまも】ってやる！	"【交換相手】 était un type plein de panache !
+ Je veillerai sur toi avec la même ferveur !"	
+ 00000057-X-01040104.script	57	2	49	470	どえりゃあ　びっくらこいたがね！\n【気付：きづ】いたら　【新：あたら】しいともだちがおったがや！	"Ça alors, quelle surprise monumentale !
+ Sans m'en rendre compte, je me suis fait un nouvel ami !"	
+ 00000057-X-01040104.script	57	2	49	471	あそび【相手：あいて】がふえて　これから\nひまじゃなくなりそうだぎゃあ！	"Un nouveau camarade de jeu, enfin !
+ On ne risque pas de s'ennuyer une seule seconde !"	
+-00000057-X-01040104.script	57	2	49	472	【交換相手】とは【仲良：なかよ】うしとったさかい\nあんたとも【気：き】が【合：あ】うと【思：おも】うわ～！	"Je m'entendais comme larrons en foire avec 【Partenaire d'échange】,
++00000057-X-01040104.script	57	2	49	472	【交換相手】とは【仲良：なかよ】うしとったさかい\nあんたとも【気：き】が【合：あ】うと【思：おも】うわ～！	"Je m'entendais comme larrons en foire avec 【交換相手】,
+ alors je suis sûr qu'on va être super potes !"	
+ 00000057-X-01040104.script	57	2	49	473	【前：まえ】の【町：まち】じゃ　たこやきは【主食：しゅしょく】やぞ！\nこの【町：まち】にも　めっちゃ【広：ひろ】めたるで～！	"Dans ma ville natale, les takoyakis sont le plat de base !
+ Je vais en faire la gloire dans cette ville aussi !"	
+@@ -14381,12 +14382,12 @@ J'ai envie de voyager dans tout un tas d'endroits !"
+ 00000057-X-01040104.script	57	2	49	475	【交換：こうかん】なんてノーサンキュー！\nこの【町：まち】になじめるまで　【相手：あいて】しろ！	"L'échange ? Pas question de dire non !
+ Occupe-toi de moi le temps que je m'habitue au coin !"	
+ 00000057-X-01040104.script	57	2	49	476	おまえ　いいコシしとるけぇ！\n【交換相手】にも　ひけをとらんよ！	"Tu as une sacrée fermeté, toi !
+-Tu n'as rien à envier à 【Partenaire d'échange】 !"	
++Tu n'as rien à envier à 【交換相手】 !"	
+ 00000057-X-01040104.script	57	2	49	477	ともだちが　ようけ【増：ふ】えたのう！\nでもみんな　まだまだ　コシがたりーん！	"On en a un paquet de nouveaux copains !
+ Mais ils manquent tous encore un peu de consistance !"	
+ 00000057-X-01040104.script	57	2	49	478	【交換：こうかん】されたの？　あっそう。\nしょんなかね　【仲良：なかよ】くしようかー。	"J'ai été échangé ? Ah bon.
+ Bah, pas le choix, devenons bons amis alors."	
+-00000057-X-01040104.script	57	2	49	479	そっか！　【交換相手】のともだちか！\n【話：はなし】には【聞：き】いてたけど　いい【人：ひと】そうばい！	"Ah d'accord ! Tu es l'ami de 【Partenaire d'échange】 !
++00000057-X-01040104.script	57	2	49	479	そっか！　【交換相手】のともだちか！\n【話：はなし】には【聞：き】いてたけど　いい【人：ひと】そうばい！	"Ah d'accord ! Tu es l'ami de 【交換相手】 !
+ J'avais entendu parler de toi, tu m'as l'air bien brave !"	
+ 00000057-X-01040104.script	57	2	49	480	めんそーれ！\n【新：あたら】しいともだち　うれしーさー！	"Bienvenue ! Mensore !
+ Un nouvel ami, ça fait chaud au cœur !"	
+@@ -14463,7 +14464,7 @@ Cette fois, je réussirai mon grand sortilège à coup sûr !"
+ 00000057-X-01040104.script	57	2	49	535	-	-	
+ 00000057-X-01040104.script	57	2	49	536	-	-	
+ 00000057-X-01040104.script	57	2	49	537	-	-	
+-00000057-X-01040104.script	57	2	49	538	おぬしは　【活：い】き【活：い】きしとるのう！\n【交換相手】の【見込：みこ】んだ【通：とお】りじゃ！	Tu débordes d'énergie, dis-moi !\nC'est exactement ce que pensait 【Partenaire d'échange】 !	
++00000057-X-01040104.script	57	2	49	538	おぬしは　【活：い】き【活：い】きしとるのう！\n【交換相手】の【見込：みこ】んだ【通：とお】りじゃ！	Tu débordes d'énergie, dis-moi !\nC'est exactement ce que pensait 【交換相手】 !	
+ 00000057-X-01040104.script	57	2	49	539	-	-	
+ 00000057-X-01040104.script	57	2	49	540	-	-	
+ 00000057-X-01040104.script	57	2	49	541	-	-	
+@@ -14815,8 +14816,8 @@ Terrassons-les tous jusqu'au dernier !"
+ restantes de l'armée de 【g】Gargaros Lu Bu【e】 !"	
+ 00000057-X-01040104.script	57	2	52	16	【r】さくらの【湯：ゆ】【e】まで\n【袁家：えんけ】の【話：はなし】を【聞：き】きにいこう。	"Allons aux 【r】Bains du Cerisier【e】
+ pour écouter ce qu'on dit sur le clan Yuan."	
+-00000057-X-01040104.script	57	2	52	17	【土蜘蛛袁紹：つちぐもえんしょう】か【大：おお】ガマ【袁術：えんじゅつ】\nどちらかの【勢力：せいりょく】に【協力：きょうりょく】しよう。	"Prêtons main-forte aux troupes d'【Arachnus Yuan Shao】
+-ou à celles de 【Crapop Yuan Shu】 !"	
++00000057-X-01040104.script	57	2	52	17	【土蜘蛛袁紹：つちぐもえんしょう】か【大：おお】ガマ【袁術：えんじゅつ】\nどちらかの【勢力：せいりょく】に【協力：きょうりょく】しよう。	"Prêtons main-forte aux troupes d'Arachnus Yuan Shao
++ou à celles de Crapop Yuan Shu !"	
+ 00000057-X-01040104.script	57	2	52	18	【土蜘蛛袁紹軍：つちぐもえんしょうぐん】と　ともに\n【大：おお】ガマ【袁術軍：えんじゅつぐん】を【倒：たお】そう！	"Allons vaincre l'armée de Crapop Yuan Shu
+ aux côtés de l'armée d'Arachnus Yuan Shao !"	
+ 00000057-X-01040104.script	57	2	52	19	【大：おお】ガマ【袁術軍：えんじゅつぐん】と　ともに\n【土蜘蛛袁紹軍：つちぐもえんしょうぐん】を【倒：たお】そう！	"Allons vaincre l'armée d'Arachnus Yuan Shao
