@@ -37,7 +37,7 @@ Ce patch modifie le code de l'exécutable (moteur de texte en ARM natif, placé 
 | Version | Fichier à télécharger | SHA-256 du résultat |
 |---|---|---|
 | **Français** (traduction relue) | `YokaiWatchSangokushi-FR.xdelta` | `4a365b26600df577214bb0a950a573e4459731050f982c7fbcb9efd34d6dbbd6` |
-| **English** (traduction automatique DeepL depuis le japonais, noms officiels des Yo-kai, **à relire**) | `YokaiWatchSangokushi-EN.xdelta` | `a5e8f654204149d2d357349bc5040a8fd1296099daeee75bb5b9e0d019f3f6f3` |
+| **English** (traduction automatique DeepL depuis le japonais, noms officiels des Yo-kai, **à relire**) | `YokaiWatchSangokushi-EN.xdelta` | `9d08be2a0b1026403e35a2c0b27ce164e83b391715746bd1c6bbc5554bb39f31` |
 
 La version anglaise est un **brouillon** : traduite automatiquement du japonais (DeepL), avec les noms anglais officiels des Yo-kai du *Yo-kai Watch Wiki* (CC BY-SA) quand ils existent ; les Yo-kai propres à *Sangokushi* n'ont pas de nom officiel et gardent la traduction automatique. Les mêmes avertissements s'appliquent. Les corrections sont les bienvenues (voir plus bas).
 

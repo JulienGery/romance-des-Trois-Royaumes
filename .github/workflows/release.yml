@@ -1,0 +1,21 @@
+# Crée la page de release GitHub quand un tag vX.Y est poussé (les patchs xdelta y sont ajoutés par fr_patch/publish_release.sh).
+# Les patchs ne peuvent pas être construits ici : il faut la ROM d'origine du jeu (non redistribuable), le recompilateur et les TSV
+# de traduction, qui ne sont pas dans le dépôt.
+name: release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Créer la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
+          gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes \
+            --notes "Patchs xdelta à appliquer sur votre propre dump (voir le README pour la procédure et les SHA-256 attendus)."
