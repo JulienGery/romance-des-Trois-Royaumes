@@ -8,6 +8,7 @@ Output is a CXI that needs no emulator support: French text data (scripts, font 
 (French font engine, line breaking, windows, bubbles; see rapport/JOURNAL_MODIFICATIONS.md). It runs in Zakuro/Citra-style emulators
 and, once converted to a CIA (makerom) and installed with signature patches, on a modded console.
 
+Other languages: `--lang en` uses translations/en/ (made by fr_patch/translate_deepl.py).
 Stages: extract -> French font atlas -> translated scripts into LINKDATA_A.BIN -> ARM code (cavities + hooks + bss) -> repack.
 Needs: 3dstool, ctrtool, python3, arm-none-eabi-gcc/ld/objcopy/nm (dotnet + polices/ft_*.xf only to regenerate the font atlas; a prebuilt one is in fr_patch/atlas)."""
 import argparse, hashlib, os, re, shutil, struct, subprocess, sys
@@ -46,10 +47,11 @@ def extract(rom):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('rom'); ap.add_argument('out')
+    ap.add_argument('--lang', default='fr', help='fr (default, SangoKuro TSVs) or another language whose TSVs are in translations/<lang>/ (see translate_deepl.py)')
     ap.add_argument('--cci', help='also write a patched CCI (same container as the input dump) to this path; needs a CCI/3DS input')
     ap.add_argument('--verify', action='store_true', help='boot the result in zakuro --interpreter (pure ARM, no recompiled library)')
     ap.add_argument('--skip-extract', action='store_true', help='reuse rom_work/ from a previous run')
-    a = ap.parse_args()
+    a = ap.parse_args(); os.environ['FR_LANG'] = a.lang
     for t in ('3dstool', 'ctrtool', 'arm-none-eabi-gcc', 'arm-none-eabi-ld', 'arm-none-eabi-objcopy', 'arm-none-eabi-nm'): need(t)
     if os.path.exists(os.path.join(ROOT, 'polices', 'ft_sml.xf')): need('dotnet')          # only to regenerate the atlas; a prebuilt one is in fr_patch/atlas
     if not a.skip_extract: extract(os.path.abspath(a.rom))

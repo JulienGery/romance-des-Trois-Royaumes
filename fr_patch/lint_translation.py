@@ -5,14 +5,19 @@ tag integrity (orphans, colour reset, variable tags kept vs the original), line 
 untranslated rows, Type 3 prefix, Type 4 bytecode rows, double spaces. Writes build/lint_report.csv.
 usage: lint_translation.py [--strict]   (exit 1 when an ERROR is found)"""
 import csv, json, os, re, struct, sys, collections
-HERE = os.path.dirname(os.path.abspath(__file__)); SK = os.path.join(HERE, '..', 'SangoKuro')
+HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+from langcfg import TSV_DIR as SK
 atlas = {g['ch'] for g in json.load(open(os.path.join(HERE, 'build', 'glyphs_sml.json')))['glyphs']}
 adv = {g['ch']: g['advance'] for g in json.load(open(os.path.join(HERE, 'build', 'glyphs_sml.json')))['glyphs']}
 # the game's own Japanese 16px code table (ELF .rodata 0x615350, 2139 UTF-8-packed codes)
-elf = open(os.path.join(HERE, '..', 'exefs.elf'), 'rb').read()
+def _exe_words():
+    # ELF image (development checkout) or the unpacked ExeFS code.bin (vaddr 0x100000 = offset 0) written by build_all.sh
+    elf = os.path.join(HERE, '..', 'exefs.elf'); cb = os.path.join(HERE, '..', 'rom_work', 'exefs_dir', 'code.bin')
+    if os.path.exists(elf): return open(elf, 'rb').read()[0x50d000 + 0x615350 - 0x60c000:][:2139 * 4]
+    return open(cb, 'rb').read()[0x615350 - 0x100000:][:2139 * 4]
 jp = set()
-for c in struct.unpack('<2139I', elf[0x50d000 + 0x615350 - 0x60c000:][:2139 * 4]):
+for c in struct.unpack('<2139I', _exe_words()):
     try: jp.add(c.to_bytes(4, 'big').lstrip(b'\0').decode('utf8'))
     except Exception: pass
 COLORS = set('brgpBRGPye') | {'G', 'R', 'B'}

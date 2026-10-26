@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Dump the translated corpus as engine-like pre-processed buffers (one record per line, NUL separated)."""
 import csv, glob, os, re, sys
-d = os.path.join(os.path.dirname(__file__), '..', 'SangoKuro')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from langcfg import TSV_DIR as d
 col = {'b': 0, 'r': 1, 'g': 2, 'p': 3, 'B': 4, 'R': 5, 'G': 6, 'y': 7}
 def conv(m):
     t = m.group(1)

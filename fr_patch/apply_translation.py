@@ -5,8 +5,8 @@ LINKDATA_A.BIN without extracting/rebuilding the whole archive.
   apply_translation.py build SRC DST     : SRC = original LINKDATA_A.BIN, DST = patched archive (scripts + entry0_fr.g1t)
 """
 import importlib.util, os, re, shutil, sys, csv, io, tempfile
-HERE = os.path.dirname(os.path.abspath(__file__)); SK = os.path.abspath(os.path.join(HERE, '..', 'SangoKuro'))
-sys.path.insert(0, HERE); sys.path.insert(0, os.path.join(HERE, '..', 'LINKDATA-explorer'))
+HERE = os.path.dirname(os.path.abspath(__file__)); SK = os.path.abspath(os.path.join(HERE, '..', 'SangoKuro'))   # SK = generator scripts
+sys.path.insert(0, HERE); from langcfg import TSV_DIR; sys.path.insert(0, os.path.join(HERE, '..', 'LINKDATA-explorer'))
 from linkdata_engine import LinkDataArchive
 from patch_linkdata import patch_many
 
@@ -38,7 +38,7 @@ def original_tsvs(dst):
     """copy of the TSVs with the translation column emptied -> generator falls back to the original text"""
     os.makedirs(dst, exist_ok=True)
     for t in range(1, 5):
-        raw = open(os.path.join(SK, f'Sangokushi-script-Type{t}.tsv'), encoding='utf-8', newline='').read()
+        raw = open(os.path.join(TSV_DIR, f'Sangokushi-script-Type{t}.tsv'), encoding='utf-8', newline='').read()
         rows = list(csv.reader(io.StringIO(raw, newline=''), delimiter='\t'))
         for r in rows[1:]:
             if len(r) > 6: r[6] = ''
@@ -62,7 +62,7 @@ if __name__ == '__main__':
         for b in bad_list[:8]: print('  differs', b)
     elif mode == 'build':
         dst = sys.argv[3]; shutil.rmtree(tmp, ignore_errors=True)
-        gen = generate(SK, tmp); a = LinkDataArchive(arch_path); items = {}
+        gen = generate(TSV_DIR, tmp); a = LinkDataArchive(arch_path); items = {}
         for idx, (name, data) in gen.items():
             marker = name.split('-')[1]; e = a.entries[idx]
             assert (marker == 'X') == e.is_compressed, f'{name}: marker does not match the archive entry'

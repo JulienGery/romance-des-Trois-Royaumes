@@ -7,7 +7,9 @@
 Engine keywords: a tag STARTING WITH Yk|It|Base|Clan|Chr|Unit|Str|Val, or 主人公名 軍師名 交換相手 主人公妖怪名 (FUN_001EB224).
 Dry run by default; --apply writes the TSVs (backups in build/tsv_backup/)."""
 import csv, io, os, re, shutil, sys, collections
-HERE = os.path.dirname(os.path.abspath(__file__)); SK = os.path.join(HERE, '..', 'SangoKuro')
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from langcfg import TSV_DIR as SK
 VAR_RE = re.compile(r'^(Yk|It|Base|Clan|Chr|Unit|Str|Val)'); VAR_JP = {'主人公名', '軍師名', '交換相手', '主人公妖怪名'}
 COLORS = set('brgpBRGPye'); SIZE = {'縮小', '倍角', '全角', '幅小'}
 TAG = re.compile(r'【([^】]*)】')

@@ -17,6 +17,7 @@ else
 fi
 cp build/font_sml.h ../overrides/font_sml.h
 python3 -I make_entry0.py ../rom_work/entry0/entry0.g1t build/entry0_fr.g1t
+../3dstool -xtfu exefs ../rom_work/exefs.bin --exefs-dir ../rom_work/exefs_dir --header ../rom_work/exefs_header.bin >/dev/null
 python3 -I lint_translation.py --strict | head -3
 python3 -I apply_translation.py build ../rom_work/romfs_dir/Data/LINKDATA_A.BIN build/LINKDATA_A.BIN
 cd ../rom_work
