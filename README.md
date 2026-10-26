@@ -28,4 +28,4 @@ Le CXI produit démarre dans Zakuro (`--interpreter`) et dans Azahar ; textes, b
 Outils de développement (nécessitent la décompilation Ghidra du jeu, non fournie) : `fr_patch/dead_code.py`, `cavity_search.py`, `cavity_update.py`, `make_trap_rom.sh` (recherche et vérification du code mort réutilisé comme cavité). Le résultat est versionné dans `fr_patch/cavities.json`.
 
 ## Mentions
-Projet de fan non officiel. *Yo-kai Watch* est une marque de LEVEL-5. Les outils de décompilation et de développement ne distribuent aucun contenu du jeu. Aucune licence n'a encore été choisie pour le code de ce dépôt.
+Projet de fan non officiel. *Yo-kai Watch* est une marque de LEVEL-5. Les outils de décompilation et de développement ne distribuent aucun contenu du jeu. `polices/Level5FontAtlas` est dérivé de [Kuriimu2](https://github.com/FanTranslatorsInternational/Kuriimu2) et reste sous **GPL-3.0** (voir `polices/Level5FontAtlas/NOTICE.md` et `LICENSE`). Aucune licence n'a encore été choisie pour le reste du code de ce dépôt.
