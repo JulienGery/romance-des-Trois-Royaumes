@@ -64,6 +64,17 @@ Si le patch est refusé, c'est que votre dump n'est pas identique à celui atten
 - ✅ **Émulateur** : testé avec **Zakuro** (avec ce `.cci`) et **Azahar** (avec le `.cxi` équivalent).
 - ❓ **Console réelle** : non testé. Le fichier n'est pas signé et l'exheader est modifié ; il faudrait le convertir en CIA et utiliser des patchs de signature.
 
+### Bonus : code de triche 60 fps
+Le jeu tourne en 30 fps. Le code [`cheats/000400000018B000.txt`](cheats/000400000018B000.txt) le fait passer à 60 fps, sur la version japonaise comme sur les versions FR/EN (même Title ID) :
+
+```
+[60 FPS]
+006AFFDC 00000000
+006AFFE0 00000002
+```
+
+À placer dans `cheats/000400000018B000.txt` (Azahar/Citra, ou Luma3DS/Rosalina), puis à activer dans la partie. Vérifié sous Zakuro (images dessinées ×2 ; la vitesse du jeu reste la même), non testé sur console. Explications : [`cheats/README.md`](cheats/README.md).
+
 ## Contribuer / signaler un problème
 
 - Un texte mal traduit, une fenêtre qui déborde, un mot coupé bizarrement : ouvrez une [issue](https://github.com/JulienGery/romance-des-Trois-Royaumes/issues) avec une capture.
