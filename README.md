@@ -1,6 +1,18 @@
 # Romance des Trois Royaumes — traduction française de *Yo-kai Watch Sangokushi* (3DS)
 
-Patch de traduction française pour **Yo-kai Watch Sangokushi** (titre `000400000018B000`, version japonaise). Une seule commande transforme **votre dump déchiffré** de la ROM japonaise en un CXI français :
+## Installer le patch (sans rien compiler)
+1. Télécharger `YokaiWatchSangokushi-FR.xdelta` (≈ 4 Mo) dans la section **Releases**.
+2. Avoir **son propre dump déchiffré** de la version japonaise, au format `.cci`, **non chiffré** (lisible par `3dstool`/`ctrtool` sans clés). Le patch ne s'applique qu'à ce dump exact : **SHA-256 attendu** `8776733296fb2f984e86102c834693b952aeae62789b4a584320c4fec359a453`.
+3. L'appliquer avec n'importe quel outil xdelta (GUI : *Delta Patcher*, *xdelta UI* ; ligne de commande ci-dessous) :
+   ```bash
+   xdelta3 -d -s yokai-sangokushi.cci YokaiWatchSangokushi-FR.xdelta yokai-sangokushi-FR.cci
+   ```
+   Le résultat doit avoir le SHA-256 `4a365b26600df577214bb0a950a573e4459731050f982c7fbcb9efd34d6dbbd6`.
+4. Lancer `yokai-sangokushi-FR.cci` dans un émulateur (testé : Azahar avec le CXI équivalent, Zakuro avec ce CCI). Sur console : conversion en CIA et signature patchée nécessaires (non testé).
+
+Le patch ne contient que les différences avec le dump d'origine (aucune ROM complète). Pour le reconstruire soi-même : `fr_patch/make_release.sh ORIGINAL.cci dossier_de_sortie`.
+
+Patch de traduction française pour **Yo-kai Watch Sangokushi** (titre `000400000018B000`, version japonaise). Pour compiler soi-même : une seule commande transforme **votre dump déchiffré** de la ROM japonaise en un CXI français :
 
 ```bash
 python3 fr_patch/patch_rom.py ORIGINAL.cci FRANCAIS.cxi --verify

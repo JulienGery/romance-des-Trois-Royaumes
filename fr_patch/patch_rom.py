@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """One-shot French patcher for Yo-kai Watch Sangokushi (3DS, title 000400000018B000).
 
-    patch_rom.py ORIGINAL.cci|.3ds|.cxi  FRENCH.cxi  [--verify] [--keep-work]
+    patch_rom.py ORIGINAL.cci|.3ds|.cxi  FRENCH.cxi  [--cci FRENCH.cci] [--verify] [--skip-extract]
 
 Input must be a DECRYPTED dump of the Japanese game (what 3dstool/ctrtool can read without keys).
 Output is a CXI that needs no emulator support: French text data (scripts, font atlas) + native ARM patches in the executable
@@ -25,7 +25,7 @@ def extract(rom):
     os.makedirs(RW, exist_ok=True)
     cxi = os.path.join(RW, 'original.cxi')
     if rom.lower().endswith(('.cci', '.3ds')):
-        run([os.path.join(ROOT, '3dstool'), '-xvt0f', 'cci', cxi, rom, '--header', os.path.join(RW, 'ncsd_header.bin')], stdout=subprocess.DEVNULL)
+        run([os.path.join(ROOT, '3dstool'), '-xvt01f', 'cci', cxi, os.path.join(RW, '1.cfa'), rom, '--header', os.path.join(RW, 'ncsd_header.bin')], stdout=subprocess.DEVNULL)
     else:
         shutil.copyfile(rom, cxi)
     run([os.path.join(ROOT, '3dstool'), '-xvtf', 'cxi', cxi, '--header', os.path.join(RW, 'header.bin'), '--exh', os.path.join(RW, 'exheader.bin'),
@@ -46,6 +46,7 @@ def extract(rom):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('rom'); ap.add_argument('out')
+    ap.add_argument('--cci', help='also write a patched CCI (same container as the input dump) to this path; needs a CCI/3DS input')
     ap.add_argument('--verify', action='store_true', help='boot the result in zakuro --interpreter (pure ARM, no recompiled library)')
     ap.add_argument('--skip-extract', action='store_true', help='reuse rom_work/ from a previous run')
     a = ap.parse_args()
@@ -55,6 +56,8 @@ def main():
     run(['sh', os.path.join(HERE, 'build_all.sh')], stdout=subprocess.DEVNULL)          # atlas + translated LINKDATA + romfs_fr.bin
     run(['sh', os.path.join(HERE, 'build_arm_rom.sh')])                                # native ARM code + exheader + game_arm.cxi
     shutil.copyfile(os.path.join(RW, 'game_arm.cxi'), a.out)
+    if a.cci:
+        run([sys.executable, os.path.join(HERE, 'make_cci.py'), os.path.join(RW, 'ncsd_header.bin'), os.path.join(RW, 'game_arm.cxi'), os.path.join(RW, '1.cfa'), a.cci])
     h = hashlib.sha256(open(a.out, 'rb').read()).hexdigest()
     print(f'\nwritten {a.out} ({os.path.getsize(a.out) // 2**20} MiB, sha256 {h[:16]}...)')
     if a.verify:
