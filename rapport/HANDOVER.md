@@ -24,6 +24,8 @@ Nouveau dans le dépôt : `fr_patch/wrap_test2.c` (propriétés du reflow sur le
 
 - **2026-10-26 (fin)** : **portage ARM réalisé** (`fr_patch/patch_rom.py`, voir `JOURNAL_MODIFICATIONS.md` §4) : une commande transforme la ROM japonaise déchiffrée en CXI français sans bibliothèque recompilée ; démarre en `zakuro --interpreter` avec les mêmes statistiques que la version overrides. À valider par l'utilisateur : lancer `zakuro FRANCAIS.cxi --interpreter` (ARM pur) et rejouer les scènes habituelles (texte, bulles, bannières), puis une longue partie (risque : cavité de code mort exécutée plus tard) ; matériel réel non testé. Les correctifs de texte peuvent désormais se faire dans `overrides/fr_text.c` et sont repris tels quels par le build ARM (`fr_patch/build_arm_rom.sh`) ; une nouvelle fonction accrochée = un nouveau `RECOMP_OVERRIDE(0x…)`, pris en compte automatiquement (sauf s'il est dans `PASS`).
 
+- **2026-10-26 (fin 2)** : patch **français** publié sous forme de patch xdelta (`fr_patch/make_release.sh`, SHA-256 résultat `4a365b26…`) ; **anglais** (brouillon DeepL depuis le japonais + noms officiels du wiki, `fr_patch/build_language.sh`, SHA-256 `a5e8f654…`). Voir `docs/TECHNIQUE.md` (autres langues, noms officiels). Traduction EN depuis le français : 75 % faite (`translations/en-from-fr/.cache.json`, non versionné), reprise possible quand le quota DeepL se réinitialise (`translate_deepl.py --lang en --source fr`). Restent : textures non traduites, essai sur console réelle.
+
 ## 2. Carte du dépôt (`/Users/juliengery/Documents/yokai_watch_claude/`)
 
 | Chemin | Rôle |
