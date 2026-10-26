@@ -12,5 +12,7 @@ GLOSS=""; [ -f "translations/glossary_$L.example.tsv" ] && [ "$SRC" = "ja" ] && 
 python3 fr_patch/translate_deepl.py --lang "$L" --source "$SRC" $GLOSS
 python3 fr_patch/translate_deepl.py --lang "$L" --source "$SRC" --write-only
 [ "$L" = "en" ] && python3 fr_patch/apply_names.py --lang "$DIR"
+[ -f "translations/manual_$L.json" ] && python3 fr_patch/apply_manual.py --lang "$DIR"
+python3 fr_patch/layout_text.py --lang "$DIR"      # spaces around tags + explicit line breaks (the dialogue windows do not wrap by themselves)
 (cd fr_patch && FR_LANG="$DIR" python3 -I lint_translation.py | grep -E "issues|characters without")
 fr_patch/make_release.sh "$ROM" "$OUT" "$DIR"
