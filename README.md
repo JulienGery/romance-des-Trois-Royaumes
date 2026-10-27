@@ -120,6 +120,10 @@ Le jeu tourne normalement à 30 FPS. Le code suivant vise à le faire passer à 
 B067DEF0 00000000
 00000148 00000001
 D3000000 00000000
+6067DBA0 00000000
+B067DEF0 00000000
+00000148 00000002
+D2000000 00000000
 ```
 
 Placez ce code dans `cheats/000400000018B000.txt` (Azahar/Citra ou Luma3DS/Rosalina), puis activez-le en jeu. Le jeu garde son timing d'origine et ne change que la fréquence d'affichage (images dessinées en double sous Zakuro). Il n'a pas été testé sur console réelle.
