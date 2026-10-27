@@ -5,12 +5,12 @@ Fonctionne sur la version japonaise **et** sur le patch FR/EN (même Title ID, a
 ```
 [60 FPS]
 006AFFDC 00000002
-B0000000 0067DEF0
+B067DEF0 00000000
 00000148 00000001
 D3000000 00000000
 ```
 
-À copier dans `/cheats/000400000018B000.txt` (Luma3DS/Rosalina) ou dans le dossier `cheats/` d'Azahar/Citra, puis activer le code. Les lignes `B…`/`D3…` utilisent le « load offset » Gateway (supporté par Azahar, vu dans son code, et par Luma3DS).
+À copier dans `/cheats/000400000018B000.txt` (Luma3DS/Rosalina) ou dans le dossier `cheats/` d'Azahar/Citra, puis activer le code. La ligne `B067DEF0 00000000` est le « load offset » Gateway (format `BXXXXXXX 00000000`, supporté par Azahar et Luma3DS) : elle lit le pointeur stocké en `0x67DEF0`, et la ligne suivante écrit à `pointeur + 0x148`. `D3…` remet l'offset à 0.
 
 ## Principe
 

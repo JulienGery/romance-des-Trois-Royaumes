@@ -117,7 +117,7 @@ Le jeu tourne normalement à 30 FPS. Le code suivant vise à le faire passer à 
 ```text
 [60 FPS]
 006AFFDC 00000002
-B0000000 0067DEF0
+B067DEF0 00000000
 00000148 00000001
 D3000000 00000000
 ```
