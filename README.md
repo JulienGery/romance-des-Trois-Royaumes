@@ -30,7 +30,7 @@ Seul le **texte** est en français. Les images du jeu (titres de lieux (le nom d
 Ce patch modifie le code de l'exécutable (moteur de texte en ARM natif, placé dans du code que j'ai jugé inutilisé). Je n'ai eu **aucun plantage** pendant mes tests, mais je ne peux pas garantir que toutes les parties du jeu ont été couvertes.
 
 - **Sauvegardez très souvent**, et gardez plusieurs fichiers de sauvegarde (ou des états de sauvegarde d'émulateur).
-- **Si le jeu plante**, c'est peut-être parce que le patch a supprimé une fonction qui était en réalité utilisée. **Prévenez-moi** en ouvrant une [issue](https://github.com/JulienGery/romance-des-Trois-Royaumes/issues) avec : l'endroit du jeu, ce que vous faisiez juste avant, l'émulateur utilisé et si possible le log. Je pourrai corriger le patch.
+- **Si le jeu plante**, c'est peut-être parce que le patch a supprimé une fonction qui était en réalité utilisée. **Prévenez-moi** en ouvrant une [issue](https://github.com/JulienGery/romance-des-Trois-Royaumes/issues) avec : l'endroit du jeu, ce que vous faisiez juste avant, l'émulateur utilisé (avec sa version), si le jeu **non patché** fonctionne dans ce même émulateur jusqu'à la carte du monde, et si possible le log. Je pourrai corriger le patch.
 
 ## Quelle version ?
 
@@ -61,7 +61,12 @@ Aucun outil à installer : tout se fait dans le navigateur.
 Si le patch est refusé, c'est que votre dump n'est pas identique à celui attendu (vérifiez son SHA-256, il doit aussi être déchiffré).
 
 ### Où jouer ?
-- ✅ **Émulateur** : testé avec **Zakuro** (avec ce `.cci`) et **Azahar** (avec le `.cxi` équivalent).
+- ✅ **Émulateur** : testé avec **Zakuro** (avec ce `.cci`), **Citra**, et **Azahar 2125.1** universal macOS (avec le `.cxi` équivalent).
+- ⚠️ **Testez d'abord la ROM non modifiée.** Certains émulateurs ou versions ne font pas tourner le jeu de base correctement, patch ou pas :
+  - **Azahar (macOS)** : les versions récentes n'arrivent pas à lancer le jeu, même avec une ROM **non patchée** (la 2125.1 universal macOS fonctionne).
+  - **AYN Thor** : écran du bas entièrement noir (le tactile répond quand même) et plantages de l'émulateur, là aussi avec la ROM d'origine.
+
+  Avant de signaler un problème, lancez votre **ROM d'origine non modifiée** dans le même émulateur et jouez jusqu'à la **carte du monde**. Si le jeu de base plante ou affiche un écran noir, le problème vient de l'émulateur (ou de sa version), pas du patch : essayez un autre émulateur ou une version plus ancienne.
 - ❓ **Console réelle** : non testé. Le fichier n'est pas signé et l'exheader est modifié ; il faudrait le convertir en CIA et utiliser des patchs de signature.
 
 ### Bonus : code de triche 60 fps
