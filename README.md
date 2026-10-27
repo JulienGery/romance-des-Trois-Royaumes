@@ -86,7 +86,8 @@ Tout le monde peut aider, même sans savoir programmer. Le guide complet est dan
 
 - **Signaler** un texte mal traduit, une fenêtre qui déborde ou un plantage : ouvrez une [issue](https://github.com/JulienGery/romance-des-Trois-Royaumes/issues/new/choose) avec une capture (un plantage est le cas le plus utile à signaler, voir plus haut).
 - **Corriger la traduction** : les textes sont des fichiers TSV dans [`translations/`](translations/README.md) (`fr/` relu, `en/` brouillon DeepL à relire). Modifiez la colonne « Translated Text » et ouvrez une pull request.
-- **Améliorer le code** (moteur de texte ARM, outils de build) : voir [docs/TECHNIQUE.md](docs/TECHNIQUE.md).
+- **Reconstruire le patch avec vos corrections** : `tools/build.sh VOTRE_DUMP.cci fr` (≈ 30 s), voir [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Le moteur de texte ARM** : rarement nécessaire, voir [docs/TECHNIQUE.md](docs/TECHNIQUE.md).
 - **Dessiner** : les textures japonaises ne sont pas traduites (voir les avertissements).
 
 ## Organisation du dépôt

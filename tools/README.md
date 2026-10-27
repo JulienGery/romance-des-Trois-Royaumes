@@ -6,6 +6,8 @@ Tous les scripts se lancent depuis n'importe quel dossier ; ils retrouvent la ra
 
 | Script | Rôle |
 |---|---|
+| `build.sh` | **commande principale** : dump + langue → `.xdelta` dans `work/release/<langue>/` |
+| `translation/search.py` | retrouver une phrase dans les TSV |
 | `setup.sh` | vérifie les outils nécessaires, clone `LINKDATA-explorer` dans `externals/` |
 | `patch_rom.py` | **point d'entrée** : dump déchiffré → CXI/CCI traduit (`--lang`, `--verify`, `--cci`) |
 | `build_all.sh` | atlas, traduction compilée dans `LINKDATA_A.BIN`, romfs |
