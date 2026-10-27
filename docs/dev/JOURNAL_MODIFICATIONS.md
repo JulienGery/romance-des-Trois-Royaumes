@@ -173,3 +173,17 @@ Commande unique : `python3 tools/patch_rom.py ORIGINAL.cci FRANCAIS.cxi [--verif
 - Boîte de dialogue système `FUN_00541794` : non adaptée (textes courts supposés).
 - Variables de tags (noms de joueur/unités) : mesurées après expansion ? Test dédié à faire avec les noms les plus longs.
 - Couverture de la cavité ARM : à mesurer.
+
+
+## 5. Correctifs d'affichage du 2026-10-27 (v1.3)
+
+Tous dans `src/overrides/fr_text.c` / `frwrap.h` (repris tels quels par le build ARM) :
+| Id | Problème | Correctif |
+|---|---|---|
+| P1 | Fenêtres « multi-lignes » (boîte d'assaut, « Sauvegarde terminée ») : le widget `0x5412E0` dessine chaque ligne séparément via `GetLine` (`0x52CAF8`), qui coupe seulement aux `\n` du texte brut → un paragraphe que nous coupons chevauche la ligne suivante | hook `0x52CAF8` : renvoie la ligne *i* du texte coupé par notre moteur (`fr_getline_core`, forme brute `【r】..【e】`, couleur fermée/rouverte à chaque ligne). `0x52CAF8` retiré de `PASS` (build_arm_native.py) |
+| P2 | Médallium (descriptions, talents, aptitudes) : texte dessiné à gauche, sans largeur de coupe → déborde du panneau | `fr_edge_rule` / `fr_edge_guest` : table position (x,y) → bord droit/bas du panneau, puis `fr_pick_step` (coupe, fusion des phrases, interligne 2, 11 px, 10 px) |
+| P3 | Médallium page 3, biographie (coupe 339 déjà active mais 5 lignes trop hautes) | `fr_bio_avail` : même « text fit » que les boîtes fixes avec la hauteur restante du panneau |
+| P4 | Phrases d'accroche (y 101) trop longues, plaque du nom (y 73) | `fr_center_guest` : une ligne réduite à ≥ 12 px (330 px), sinon deux lignes de 11 px remontées par une dernière ligne contenant un espace ; plaque : 90 px |
+| P5 | ⑯ (bouton HOME) : notre atlas contenait un « 16 » cerclé | U+246F retiré des tables (`fr_lookup`, `frw_lookup`) → police d'origine du jeu |
+| P6 | Place dans les cavités ARM | choix de mise en page factorisé (`fr_pick_step`), calculs flottants sortis des fonctions (`fr_ctr_xi/yi`, `fr_ftoi`, `fr_itof`) : 12 140 → 11 420 o ; l'empaqueteur laisse 8 o de marge ; les overrides « pass-through » ne sont plus compilés |
+| P7 | Journal `FR_TRACE_FILE` | une ligne identique à l'une des 64 dernières n'est plus écrite |

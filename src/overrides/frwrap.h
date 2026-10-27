@@ -15,6 +15,7 @@
 #endif
 
 static int frw_lookup(uint32_t code) {
+    if (code == 0xE291AFu) return -1;     /* U+246F: the HOME button icon of the game's own font (our atlas only has a circled 16) */
     int lo = 0, hi = FR_SML_COUNT - 1;
     while (lo <= hi) {
         int mid = (lo + hi) >> 1; uint32_t v = fr_sml_codes[mid];
@@ -216,6 +217,50 @@ static int frw_max_line(const uint8_t *in, int inlen, int cw0, int spacing) {
 /* default for windows and bubbles */
 static int fr_wrap_text(const uint8_t *in, int inlen, uint8_t *out, int outcap, int wrap, int cw0, int spacing, int maxc, int *complete) {
     return fr_wrap_text2(in, inlen, out, outcap, wrap, cw0, spacing, maxc, complete, FRW_REFLOW | FRW_BALANCE);
+}
+
+
+
+/* ---- per-line draw of multi-line widgets (FUN_005412E0 -> FUN_0052CAF8 "GetLine" -> draw): the engine cuts the RAW text at explicit
+ * newlines only, then draws every cut as its own line at y0 + i * pitch, so a paragraph that wraps (a long place name) overlaps the next
+ * line. This returns line `idx` of the text wrapped by us (same wrap as the measure), in RAW form (【r】..【e】 tags): a colour open at the
+ * end of a line is closed there and reopened at the start of the next one (every line is drawn on its own).
+ * returns -1 when the text holds tags we do not handle (the caller then keeps the original behaviour), else 1 if a line follows, 0 if not. */
+static const char frw_cols[] = "brgpBRGy";           /* colour tag letters, same order as the engine's 0x12 argument */
+static int frw_put_tag(uint8_t *out, int o, int cap, uint8_t c) {      /* appends 【c】 (UTF-8), returns the new length */
+    static const uint8_t tg[7] = { 0xE3, 0x80, 0x90, 0, 0xE3, 0x80, 0x91 };
+    for (int i = 0; i < 7 && o < cap - 9; i++) out[o++] = i == 3 ? c : tg[i];
+    return o;
+}
+static int fr_getline_core(const uint8_t *raw, int len, int wrap, int cw, int spacing, int idx, uint8_t *out, int outcap) {
+    static uint8_t in[1100], wr[1100]; int n = 0, k;
+    if (len > 1000) return -1;
+    for (int i = 0; i < len;) {
+        uint8_t c = raw[i];
+        if (c == 0xE3 && i + 6 < len && raw[i + 1] == 0x80 && raw[i + 2] == 0x90) {       /* 【x】: only one-letter tags */
+            if (raw[i + 4] != 0xE3 || raw[i + 5] != 0x80 || raw[i + 6] != 0x91) return -1;
+            c = raw[i + 3]; i += 7;
+            if (c == 'e') in[n++] = 0x13;
+            else { for (k = 0; k < 8 && (uint8_t)frw_cols[k] != c; k++) ; if (k == 8) return -1; in[n++] = 0x12; in[n++] = (uint8_t)k; }
+        } else { if (c == 0x11 || (c < 0x20 && c != '\n')) return -1; in[n++] = c; i++; }
+    }
+    int ol = fr_wrap_text2(in, n, wr, 1024, wrap, cw, spacing, -1, NULL, FRW_REFLOW | FRW_BALANCE);
+    if (ol < 0) return -1;
+    int line = 0, open = -1, p = 0, o = 0;
+    for (; p < ol && line < idx; p++) {               /* skip to line idx, tracking the colour state */
+        if (wr[p] == '\n') line++; else if (wr[p] == 0x12) open = wr[++p]; else if (wr[p] == 0x13) open = -1;
+    }
+    if (line < idx) { out[0] = 0; return 0; }
+    if (open >= 0) o = frw_put_tag(out, o, outcap, frw_cols[open]);
+    for (; p < ol; p++) {
+        uint8_t b = wr[p];
+        if (b == '\n') { if (open >= 0) o = frw_put_tag(out, o, outcap, 'e'); out[o] = 0; return 1; }
+        if (b == 0x12 || b == 0x13) { open = b == 0x12 ? wr[++p] & 7 : -1; o = frw_put_tag(out, o, outcap, b == 0x12 ? frw_cols[open] : 'e'); }
+        else if (o < outcap - 9) out[o++] = b;
+    }
+    if (open >= 0) o = frw_put_tag(out, o, outcap, 'e');
+    out[o] = 0;
+    return 0;
 }
 
 #endif

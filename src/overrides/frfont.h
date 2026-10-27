@@ -47,7 +47,17 @@ static FILE *fr_logf(void) {
     return f;
 }
 #endif
+#ifdef FR_NATIVE
 #define FR_LOG(...) do { FILE *f_ = fr_logf(); if (f_) { fprintf(f_, __VA_ARGS__); fflush(f_); } } while (0)
+#else
+/* a line identical to one of the last 64 distinct lines is dropped (a layout function runs every frame: the log used to reach GBs) */
+static void fr_log_line(FILE *f, const char *line) {
+    static uint32_t seen[64]; static int ns; uint32_t h = 5381; for (const char *q = line; *q; q++) h = h * 33 + (uint8_t)*q;
+    for (int i = 0; i < 64; i++) if (seen[i] == h) return;
+    seen[ns++ & 63] = h; fputs(line, f); fflush(f);
+}
+#define FR_LOG(...) do { FILE *f_ = fr_logf(); if (f_) { static char lb_[2048]; snprintf(lb_, sizeof lb_, __VA_ARGS__); fr_log_line(f_, lb_); } } while (0)
+#endif
 static void fr_text_head(Context *c, uint32_t p, char *out, int n) {   /* printable head of a guest string */
     int i = 0; for (; i < n - 1; i++) { uint8_t b = mem_read8(c, p + i); if (!b) break; out[i] = (b == '\n') ? '|' : (b >= 32 ? b : '?'); } out[i] = 0;
 }
@@ -62,6 +72,7 @@ static inline uint32_t fr_bits(float f) { uint32_t b; memcpy(&b, &f, 4); return 
 
 /* ------------------------------------------------------------------ glyph table */
 static int fr_lookup(uint32_t code) {
+    if (code == 0xE291AFu) return -1;     /* U+246F: the HOME button icon of the game's own font (our atlas only has a circled 16) */
     int lo = 0, hi = FR_SML_COUNT - 1;
     while (lo <= hi) {
         int mid = (lo + hi) >> 1;

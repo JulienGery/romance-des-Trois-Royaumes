@@ -34,12 +34,18 @@ RECOMP_OVERRIDE(0x0052DC54) { fr_glyph(ctx, RECOMP_ORIGINAL(0x0052DC54)); }
  * their panel or the screen). FUN_0052D340 gets the centre (x,y) in s0/s1; the preprocess then wraps to what fits around that centre. */
 static int fr_last_meas_w;      /* width of the last measure (widest line) */
 static int fr_blk_maxw, fr_blk_left;   /* per-line panel text (FUN_002B8C30): widest line of the block, lines still to draw */
-static int fr_ctr_active; static float fr_ctr_x, fr_ctr_y;
+static int fr_ctr_active; static float fr_ctr_x, fr_ctr_y; static uint32_t fr_ctr_xb;
+static int fr_ctr_xi, fr_ctr_yi;       /* integer copies of the draw position: the code that uses them can stay Thumb (no VFP) */
+static FR_ARM int fr_ftoi(uint32_t bits) { return (int)fr_f(bits); }
+static FR_ARM uint32_t fr_itof(int v) { return fr_bits((float)v); }
+static FR_ARM void fr_ctr_set(Context *ctx) {
+    fr_ctr_x = fr_f(ctx->vfp[0]); fr_ctr_y = fr_f(ctx->vfp[1]); fr_ctr_xb = ctx->vfp[0]; fr_ctr_xi = (int)fr_ctr_x; fr_ctr_yi = (int)fr_ctr_y;
+}
 RECOMP_OVERRIDE(0x0052D340) {
     FR_ENSURE_BUDGET(ctx);
     fr_init(ctx);
     uint32_t lr = ctx->r[14], sv[3] = { fr_rd(ctx, FO_CHARW), fr_rd(ctx, FO_CHARH), fr_rd(ctx, FO_LINESP) };
-    fr_ctr_x = fr_f(ctx->vfp[0]); fr_ctr_y = fr_f(ctx->vfp[1]); fr_ctr_active = 1;
+    fr_ctr_set(ctx); fr_ctr_active = 1;
     CALL(RECOMP_ORIGINAL(0x0052D340));
     fr_ctr_active = 0;
     if (fr_blk_left > 0 && --fr_blk_left == 0) fr_blk_maxw = 0;
@@ -61,12 +67,35 @@ static int fr_cb_textw;         /* text width measured by the combat bubble code
 static int fr_prewrapped;       /* the buffer built by the last preprocess was wrapped by us */
 int fr_wrap_disabled;           /* test switch (shared with diag_font.c) */
 
-/* wraps the NUL-terminated buffer at guest address buf in place. returns 1 when done, 0 when the text has ruby
- * (left untouched, original behaviour). *complete = typewriter "everything shown" result */
+/* the NUL-terminated guest buffer -> in[]; returns its length, -1 when it holds ruby (left untouched, original behaviour) */
+static int fr_read_guest(Context *c, uint32_t buf, uint8_t *in) {
+    int len = 0;
+    while (len < 1030) { uint8_t b = mem_read8(c, buf + len); if (!b) break; if (b == 0x11) return -1; in[len++] = b; }
+    return len;
+}
+static int fr_count_lines(const uint8_t *b, int len) { int n = 1; for (int i = 0; i < len; i++) if (b[i] == '\n') n++; return n; }
+
+/* the layouts the text-fit family tries, in order: the first whose wrapped text fits availH (one line always fits) is written into the
+ * guest buffer; the last one when none does. Returns its index, -1 for ruby. */
+typedef struct { int size, lsp, flags; } fr_step;
+static int fr_pick_step(Context *c, uint32_t buf, const uint8_t *in, int len, int W, int availH, const fr_step *st, int ns, int sp, int maxc, int *complete) {
+    static uint8_t out[1100]; int pick = ns - 1, ol;
+    for (int k = 0; k < ns; k++) {
+        ol = fr_wrap_text2(in, len, out, 1024, W, st[k].size, sp, -1, NULL, st[k].flags);
+        if (ol < 0) return -1;
+        int n = fr_count_lines(out, ol);
+        if (n == 1 || n * st[k].size + (n - 1) * st[k].lsp <= availH) { pick = k; break; }
+    }
+    ol = fr_wrap_text2(in, len, out, 1024, W, st[pick].size, sp, maxc, complete, st[pick].flags);
+    if (ol < 0) return -1;
+    for (int i = 0; i <= ol; i++) mem_write8(c, buf + i, out[i]);
+    return pick;
+}
+/* wraps the buffer at guest address buf in place. returns 1 when done, 0 when the text has ruby. *complete = typewriter "everything shown" result */
 static int fr_wrap_guest(Context *c, uint32_t buf, int maxc, int *complete) {
     static uint8_t in[1100], out[1100];
-    int len = 0;
-    while (len < 1030) { uint8_t b = mem_read8(c, buf + len); if (!b) break; if (b == 0x11) return 0; in[len++] = b; }
+    int len = fr_read_guest(c, buf, in);
+    if (len < 0) return 0;
     int ol = fr_wrap_text(in, len, out, 1024, (int)fr_rd(c, FO_WRAP), (int)fr_rd(c, FO_CHARW), (int)fr_rd(c, FO_SPACING), maxc, complete);
     if (ol < 0) return 0;
     for (int i = 0; i <= ol; i++) mem_write8(c, buf + i, out[i]);
@@ -82,81 +111,106 @@ static uint32_t fr_managed[64]; static int fr_managed_n;   /* widgets sized by a
 static void fr_mark_managed(uint32_t wd) { for (int i = 0; i < 64; i++) if (fr_managed[i] == wd) return; fr_managed[fr_managed_n++ & 63] = wd; }
 static int fr_is_managed(uint32_t wd) { for (int i = 0; i < 64; i++) if (fr_managed[i] == wd) return 1; return 0; }
 
-static int fr_count_lines(const uint8_t *b, int len) { int n = 1; for (int i = 0; i < len; i++) if (b[i] == '\n') n++; return n; }
-
 static int fr_fit_guest(Context *c, uint32_t buf, int maxc, int *complete) {
-    static uint8_t in[1100], out[1100], best[1100];
-    int len = 0;
-    while (len < 1030) { uint8_t b = mem_read8(c, buf + len); if (!b) break; if (b == 0x11) return 0; in[len++] = b; }
+    static uint8_t in[1100];
+    int len = fr_read_guest(c, buf, in);
+    if (len < 0) return 0;
     int cw = (int)fr_rd(c, FO_CHARW), lsp = (int)fr_rd(c, FO_LINESP);
     if (fr_fit_base_valid && cw == fr_fit_ap_cw && lsp == fr_fit_ap_lsp) { cw = fr_fit_base_cw; lsp = fr_fit_base_lsp; }   /* second preprocess of the same draw */
-    int wrap = (int)fr_rd(c, FO_WRAP), spacing = (int)fr_rd(c, FO_SPACING);
-    struct { int size, lsp, flags; } cand[12]; int nc = 0;
-    int tight = lsp < 2 ? lsp : 2;
-    cand[nc].size = cw; cand[nc].lsp = lsp;   cand[nc++].flags = FRW_REFLOW | FRW_BALANCE;
-    cand[nc].size = cw; cand[nc].lsp = lsp;   cand[nc++].flags = FRW_REFLOW_ALL | FRW_BALANCE;
-    cand[nc].size = cw; cand[nc].lsp = tight; cand[nc++].flags = FRW_REFLOW_ALL | FRW_BALANCE;
-    static const int small[2] = { 14, 12 };
-    for (int k = 0; k < 2; k++) if (small[k] < cw) {
-        cand[nc].size = small[k]; cand[nc].lsp = tight; cand[nc++].flags = FRW_REFLOW | FRW_BALANCE;
-        cand[nc].size = small[k]; cand[nc].lsp = tight; cand[nc++].flags = FRW_REFLOW_ALL | FRW_BALANCE;
+    int tight = lsp < 2 ? lsp : 2, ns = 0;
+    fr_step st[8];
+    st[ns++] = (fr_step){ cw, lsp, FRW_REFLOW | FRW_BALANCE };
+    st[ns++] = (fr_step){ cw, lsp, FRW_REFLOW_ALL | FRW_BALANCE };
+    st[ns++] = (fr_step){ cw, tight, FRW_REFLOW_ALL | FRW_BALANCE };
+    for (int sz = 14; sz >= 12; sz -= 2) if (sz < cw) {
+        st[ns++] = (fr_step){ sz, tight, FRW_REFLOW | FRW_BALANCE };
+        st[ns++] = (fr_step){ sz, tight, FRW_REFLOW_ALL | FRW_BALANCE };
     }
-    int pick = nc - 1;
-    for (int k = 0; k < nc; k++) {
-        int ol = fr_wrap_text2(in, len, out, 1024, wrap, cand[k].size, spacing, -1, NULL, cand[k].flags);
-        if (ol < 0) return 0;
-        int n = fr_count_lines(out, ol), h = n * cand[k].size + (n - 1) * cand[k].lsp;
-        if (n == 1 || h <= fr_fit_h) { pick = k; break; }
+    int pick = fr_pick_step(c, buf, in, len, (int)fr_rd(c, FO_WRAP), fr_fit_h, st, ns, (int)fr_rd(c, FO_SPACING), maxc, complete);
+    if (pick < 0) return 0;
+    if (st[pick].size != cw || st[pick].lsp != lsp) {
+        fr_fit_base_valid = 1; fr_fit_base_cw = cw; fr_fit_base_lsp = lsp; fr_fit_ap_cw = st[pick].size; fr_fit_ap_lsp = st[pick].lsp;
+        fr_wr(c, FO_CHARW, st[pick].size); fr_wr(c, FO_CHARH, st[pick].size); fr_wr(c, FO_LINESP, st[pick].lsp);
     }
-    int ol = fr_wrap_text2(in, len, best, 1024, wrap, cand[pick].size, spacing, maxc, complete, cand[pick].flags);
-    if (ol < 0) return 0;
-    for (int i = 0; i <= ol; i++) mem_write8(c, buf + i, best[i]);
-    if (cand[pick].size != cw || cand[pick].lsp != lsp) {
-        fr_fit_base_valid = 1; fr_fit_base_cw = cw; fr_fit_base_lsp = lsp; fr_fit_ap_cw = cand[pick].size; fr_fit_ap_lsp = cand[pick].lsp;
-        fr_wr(c, FO_CHARW, cand[pick].size); fr_wr(c, FO_CHARH, cand[pick].size); fr_wr(c, FO_LINESP, cand[pick].lsp);
-    }
-    if (pick) FR_LOG("FIT step=%d size=%d lsp=%d flags=%d inner=%d lines=%d\n", pick + 1, cand[pick].size, cand[pick].lsp, cand[pick].flags, fr_fit_h, fr_count_lines(best, ol));
+    if (pick) FR_LOG("FIT step=%d size=%d lsp=%d flags=%d inner=%d\n", pick + 1, st[pick].size, st[pick].lsp, st[pick].flags, fr_fit_h);
     return 1;
 }
 
 #define FR_CTR_MAXW 284
-static FR_ARM int fr_center_guest(Context *c, uint32_t buf, int maxc, int *complete) {   /* 1 = rewrapped, 0 = nothing to do */
-    static uint8_t in[1100], out[1100];
-    int len = 0;
-    while (len < 1030) { uint8_t b = mem_read8(c, buf + len); if (!b) break; if (b == 0x11) return 0; in[len++] = b; }
+/* Medallium page 3 slots (centred, y fixed): the name plate (y 73, ~90 px wide) and the tagline above the white rule (y 101, ~330 px, one line high:
+ * the rule is at y ~ 111). A tagline that does not fit on one line at 12 px is set on two 11 px lines, moved up by a last line holding one space (the block is centred; a truly empty last line is not counted). */
+static int fr_center_guest(Context *c, uint32_t buf, int maxc, int *complete) {   /* 1 = rewrapped, 0 = nothing to do */
+    static uint8_t in[1100];
+    int len = fr_read_guest(c, buf, in);
+    if (len < 0) return 0;
     int cw = (int)fr_rd(c, FO_CHARW), lsp = (int)fr_rd(c, FO_LINESP), sp = (int)fr_rd(c, FO_SPACING);
-    float hx = fr_ctr_x < 400 - fr_ctr_x ? fr_ctr_x : 400 - fr_ctr_x, hy = fr_ctr_y < 240 - fr_ctr_y ? fr_ctr_y : 240 - fr_ctr_y;
-    int W = (int)(2 * hx) - 12; if (W > FR_CTR_MAXW) W = FR_CTR_MAXW; if (W < 120) return 0;
-    int availH = (int)(2 * hy) - 8;
+    int ty = fr_ctr_yi, tag = ty == 101 && cw == 14, plate = ty == 73 && cw == 14;
+    int hx = fr_ctr_xi < 400 - fr_ctr_xi ? fr_ctr_xi : 400 - fr_ctr_xi, hy = ty < 240 - ty ? ty : 240 - ty;
+    int W = 2 * hx - 12; if (W > FR_CTR_MAXW) W = FR_CTR_MAXW;
+    if (tag) W = 330; else if (plate) W = 90; else if (W < 120) return 0;
     int mx = frw_max_line(in, len, cw, sp);
     if (mx <= W) return 0;
-    if (fr_count_lines(in, len) == 1) {         /* a one-line label/banner: no room for a second line, shrink it instead (down to 11 px) */
+    if (fr_count_lines(in, len) == 1) {         /* a one-line label/banner: no room for a second line, shrink it instead (down to 11 px, 12 for a tagline) */
         int sz = cw * W / mx;
-        if (sz >= 11) { if (sz < cw) { fr_wr(c, FO_CHARW, sz); fr_wr(c, FO_CHARH, sz); FR_LOG("LABELFIT centre=%.0f W=%d widest=%d size %d->%d\n", fr_ctr_x, W, mx, cw, sz); } return 0; }
+        if (sz >= (tag ? 12 : 11)) { if (sz < cw) { fr_wr(c, FO_CHARW, sz); fr_wr(c, FO_CHARH, sz); FR_LOG("LABELFIT centre=%.0f W=%d widest=%d size %d->%d\n", fr_ctr_x, W, mx, cw, sz); } return 0; }
     }
-    static const int sizes[3] = { 0, 14, 12 };
-    int pick = -1, psz = cw, plsp = lsp;
-    for (int k = 0; k < 3; k++) {
-        int sz = k == 0 ? cw : sizes[k]; if (k && sz >= cw) continue;
-        int ls = k == 0 ? lsp : (lsp < 2 ? lsp : (lsp * sz / cw > 2 ? lsp * sz / cw : 2));
-        int ol = fr_wrap_text2(in, len, out, 1024, W, sz, sp, -1, NULL, FRW_REFLOW | FRW_BALANCE);
-        if (ol < 0) return 0;
-        int n = fr_count_lines(out, ol), h = n * sz + (n - 1) * ls;
-        pick = k; psz = sz; plsp = ls;
-        if (h <= availH) break;
+    fr_step st[3]; int ns = 0;
+    if (tag) st[ns++] = (fr_step){ 11, 1, FRW_REFLOW | FRW_BALANCE };
+    else {
+        st[ns++] = (fr_step){ cw, lsp, FRW_REFLOW | FRW_BALANCE };
+        for (int sz = 14; sz >= 12; sz -= 2) if (sz < cw) st[ns++] = (fr_step){ sz, lsp < 2 ? lsp : (lsp * sz / cw > 2 ? lsp * sz / cw : 2), FRW_REFLOW | FRW_BALANCE };
     }
+    int pick = fr_pick_step(c, buf, in, len, W, 2 * hy - 8, st, ns, sp, maxc, complete);
     if (pick < 0) return 0;
-    int ol = fr_wrap_text2(in, len, out, 1024, W, psz, sp, maxc, complete, FRW_REFLOW | FRW_BALANCE);
-    if (ol < 0) return 0;
-    for (int i = 0; i <= ol; i++) mem_write8(c, buf + i, out[i]);
-    if (psz != cw || plsp != lsp) { fr_wr(c, FO_CHARW, psz); fr_wr(c, FO_CHARH, psz); fr_wr(c, FO_LINESP, plsp); }
-    FR_LOG("CENTERFIT centre=(%.0f,%.0f) W=%d size=%d lsp=%d lines=%d\n", fr_ctr_x, fr_ctr_y, W, psz, plsp, fr_count_lines(out, ol));
+    if (tag) { int o = 0; while (mem_read8(c, buf + o)) o++; mem_write8(c, buf + o, '\n'); mem_write8(c, buf + o + 1, ' '); mem_write8(c, buf + o + 2, 0); }
+    if (st[pick].size != cw || st[pick].lsp != lsp) { fr_wr(c, FO_CHARW, st[pick].size); fr_wr(c, FO_CHARH, st[pick].size); fr_wr(c, FO_LINESP, st[pick].lsp); }
+    FR_LOG("CENTERFIT centre=(%.0f,%.0f) W=%d size=%d lsp=%d\n", fr_ctr_x, fr_ctr_y, W, st[pick].size, st[pick].lsp);
+    return 1;
+}
+
+/* left-aligned text drawn with NO wrap width inside a panel of the Medallium pages (the Japanese lines were short, the French sentences
+ * run past the panel / below it). The panel is found from the draw position (x, y), which is fixed per page:
+ *   page 1 description (x 216, y 59) and skill text (x 216, y 182) ; page 2 ability texts (x 23 and 213, y ~168) ; page 3 biography (x 33, y ~126).
+ * Wrap to the panel, then, when the block is too tall for the space left, join the sentences, tighten the spacing, finally shrink to 11/10 px. */
+static int fr_edge_r, fr_edge_b;
+static int fr_edge_rule(void) {
+    int x = fr_ctr_xi, y = fr_ctr_yi;
+    if (x >= 200 && x < 300) { fr_edge_r = 376; fr_edge_b = y < 150 ? 156 : 222; return 1; }
+    if (x >= 16 && x < 40 && y >= 160 && y < 200) { fr_edge_r = 196; fr_edge_b = 224; return 1; }
+    if (x >= 20 && x < 40 && y >= 100 && y < 150) { fr_edge_r = 378; fr_edge_b = 210; return 1; }
+    return 0;
+}
+/* Medallium page 3 (biography): drawn left-aligned with a real wrap width (339) from (31, 122) inside a panel that ends at y ~ 210: five wrapped lines
+ * (14 px + 7) run below it. Same text fit as the fixed boxes, with the height left in the panel. */
+static int fr_bio_avail(int wrap, int cw) {
+    int y = fr_ctr_yi;
+    return cw == 14 && wrap >= 330 && wrap <= 345 && y >= 118 && y <= 126 ? 210 - y : 0;
+}
+static int fr_edge_guest(Context *c, uint32_t buf, int maxc, int *complete) {
+    static uint8_t in[1100];
+    int len = fr_read_guest(c, buf, in);
+    if (len < 0) return 0;
+    int cw = (int)fr_rd(c, FO_CHARW), lsp = (int)fr_rd(c, FO_LINESP), sp = (int)fr_rd(c, FO_SPACING);
+    int W = fr_edge_r - fr_ctr_xi; if (W < 100) return 0;
+    int availH = fr_edge_b - fr_ctr_yi, n0 = fr_count_lines(in, len);
+    if (frw_max_line(in, len, cw, sp) <= W && n0 * cw + (n0 - 1) * lsp <= availH) return 0;
+    int tight = lsp < 2 ? lsp : 2, ns = 0;
+    fr_step st[5];                                   /* normal wrap; join sentences; tight spacing; 11 px; 10 px */
+    st[ns++] = (fr_step){ cw, lsp, FRW_REFLOW | FRW_BALANCE };
+    st[ns++] = (fr_step){ cw, lsp, FRW_REFLOW_ALL | FRW_BALANCE };
+    st[ns++] = (fr_step){ cw, tight, FRW_REFLOW_ALL | FRW_BALANCE };
+    for (int sz = 11; sz >= 10; sz--) st[ns++] = (fr_step){ sz < cw ? sz : cw, tight, FRW_REFLOW_ALL | FRW_BALANCE };
+    int pick = fr_pick_step(c, buf, in, len, W, availH, st, ns, sp, maxc, complete);
+    if (pick < 0) return 0;
+    if (st[pick].lsp != lsp) fr_wr(c, FO_LINESP, st[pick].lsp);
+    if (st[pick].size != cw) { fr_wr(c, FO_CHARW, st[pick].size); fr_wr(c, FO_CHARH, st[pick].size); }
+    FR_LOG("EDGEFIT x=%.0f y=%.0f W=%d step=%d size=%d lsp=%d\n", fr_ctr_x, fr_ctr_y, W, pick + 1, st[pick].size, st[pick].lsp);
     return 1;
 }
 
 /* one line of a panel text: shrink uniformly so the widest line fits around the centre */
-static FR_ARM void fr_panel_shrink(Context *ctx) {
-    float hx = fr_ctr_x < 400 - fr_ctr_x ? fr_ctr_x : 400 - fr_ctr_x; int W = (int)(2 * hx) - 12; if (W > 380) W = 380;
+static void fr_panel_shrink(Context *ctx) {
+    int hx = fr_ctr_xi < 400 - fr_ctr_xi ? fr_ctr_xi : 400 - fr_ctr_xi; int W = 2 * hx - 12; if (W > 380) W = 380;
     int cw = (int)fr_rd(ctx, FO_CHARW);
     if (W >= 120 && fr_blk_maxw > W) { int sz = cw * W / fr_blk_maxw; if (sz < 11) sz = 11;
         if (sz < cw) { fr_wr(ctx, FO_CHARW, sz); fr_wr(ctx, FO_CHARH, sz); FR_LOG("PANELFIT centre=%.0f W=%d widest=%d size %d->%d\n", fr_ctr_x, W, fr_blk_maxw, cw, sz); } }
@@ -176,11 +230,21 @@ RECOMP_OVERRIDE(0x0052C690) {
         if (fr_center_guest(ctx, buf, (int)maxc, &complete)) { fr_prewrapped = 1; ctx->r[0] = complete ? 1 : 0; ctx->r[14] = lr; RETURN_TO(lr); }
         ctx->r[0] = font; ctx->r[1] = buf; ctx->r[2] = str; ctx->r[3] = maxc; ctx->r[14] = lr; CALL(RECOMP_ORIGINAL(0x0052C690)); return;
     }
+    if (!fr_wrap_disabled && font == FONT_OBJ && (int)fr_rd(ctx, FO_WRAP) >= 0x7FFFFFFF && fr_ctr_active && !fr_fit_h && fr_rd(ctx, FO_ALIGN) == 0
+        && fr_edge_rule() && !getenv("FR_NOEDGE")) {
+        ctx->r[3] = 0xFFFFFFFFu; CALL(RECOMP_ORIGINAL(0x0052C690));
+        int complete = 1;
+        if (fr_edge_guest(ctx, buf, (int)maxc, &complete)) { fr_prewrapped = 1; ctx->r[0] = complete ? 1 : 0; ctx->r[14] = lr; RETURN_TO(lr); }
+        ctx->r[0] = font; ctx->r[1] = buf; ctx->r[2] = str; ctx->r[3] = maxc; ctx->r[14] = lr; CALL(RECOMP_ORIGINAL(0x0052C690)); return;
+    }
     if (fr_wrap_disabled || font != FONT_OBJ || (int)fr_rd(ctx, FO_WRAP) >= 0x7FFFFFFF) { CALL(RECOMP_ORIGINAL(0x0052C690)); return; }
     ctx->r[3] = 0xFFFFFFFFu;                  /* wrap the whole text first, then apply the typewriter limit */
     CALL(RECOMP_ORIGINAL(0x0052C690));
-    int complete = 1;
-    if (fr_fit_h > 0 ? fr_fit_guest(ctx, buf, (int)maxc, &complete) : fr_wrap_guest(ctx, buf, (int)maxc, &complete)) {
+    int complete = 1, bio = !fr_fit_h && fr_ctr_active && fr_rd(ctx, FO_ALIGN) == 0 ? fr_bio_avail((int)fr_rd(ctx, FO_WRAP), (int)fr_rd(ctx, FO_CHARW)) : 0;
+    if (bio) fr_fit_h = bio;
+    int done = fr_fit_h > 0 ? fr_fit_guest(ctx, buf, (int)maxc, &complete) : fr_wrap_guest(ctx, buf, (int)maxc, &complete);
+    if (bio) fr_fit_h = 0;
+    if (done) {
         fr_prewrapped = 1;
         ctx->r[0] = complete ? 1 : 0; ctx->r[14] = lr;
         RETURN_TO(lr);
@@ -276,14 +340,14 @@ static void fr_measure_via_override(Context *ctx, uint32_t txt, uint32_t *w, uin
 }
 
 /* returns 1 when the widget geometry was changed */
-static FR_ARM int fr_fix_message_box(Context *ctx, uint32_t fn, uint32_t wd, uint32_t txt, int fixed_h) {
+static int fr_fix_message_box(Context *ctx, uint32_t fn, uint32_t wd, uint32_t txt, int fixed_h) {
     #define WF(o) ((int)mem_read32(ctx, wd + (o)))
     int bx = WF(0x24), by = WF(0x28), bw = WF(0x2C), bh = WF(0x30), tx = WF(0x254), ty = WF(0x258);
     int mw = WF(0x26C), mh = WF(0x270), cw = WF(0x260);
-    float lsp = fr_f(mem_read32(ctx, wd + 0x268));
+    int lsp = fr_ftoi(mem_read32(ctx, wd + 0x268));
     (void)bx;
     { char h_[64]; fr_text_head(ctx, txt, h_, 64);
-      FR_LOG("LAYOUT fn=%08X wd=%08X mode=%d type=%d box=(%d,%d,%d,%d) text@(%d,%d) meas=(%d,%d) cw=%d lsp=%.1f fixed=%d '%s'\n", fn, wd, WF(0x48), WF(0x2A4), bx, by, bw, bh, tx, ty, mw, mh, cw, lsp, fixed_h, h_); }
+      FR_LOG("LAYOUT fn=%08X wd=%08X mode=%d type=%d box=(%d,%d,%d,%d) text@(%d,%d) meas=(%d,%d) cw=%d lsp=%d fixed=%d '%s'\n", fn, wd, WF(0x48), WF(0x2A4), bx, by, bw, bh, tx, ty, mw, mh, cw, lsp, fixed_h, h_); }
     int fits = by >= 0 && by + bh <= FR_SCREEN_H + FR_TOL && ty + mh <= bh && tx >= 0 && tx + mw <= bw;
     if (getenv("FR_TRACE")) fprintf(stderr, "[fr] fixbox by=%d bh=%d ty=%d mh=%d tx=%d mw=%d bw=%d fits=%d txt=%08X\n", by, bh, ty, mh, tx, mw, bw, fits, txt);
     if (fits || !txt) return 0;
@@ -291,9 +355,9 @@ static FR_ARM int fr_fix_message_box(Context *ctx, uint32_t fn, uint32_t wd, uin
     int wrapW = bw - 16; if (wrapW > 301) wrapW = 301;
     uint32_t saved[6] = { fr_rd(ctx, FO_CHARW), fr_rd(ctx, FO_CHARH), fr_rd(ctx, FO_LINESP), fr_rd(ctx, FO_WRAP), fr_rd(ctx, FO_ALIGN), fr_rd(ctx, FO_SPACING) };
     static const int sizes[3] = { 16, 14, 12 };
-    int best = -1, nbh = bh, nby = by, ntx = tx, nmw = mw, nmh = mh, nlsp = (int)lsp, ncw = cw;
+    int best = -1, nbh = bh, nby = by, ntx = tx, nmw = mw, nmh = mh, nlsp = lsp, ncw = cw;
     for (int k = 0; k < 3; k++) {
-        int s = sizes[k], ls = (int)(lsp * s / 16.0f + 0.5f);
+        int s = sizes[k], ls = (lsp * s + 8) / 16;
         fr_wr(ctx, FO_CHARW, s); fr_wr(ctx, FO_CHARH, s); fr_wr(ctx, FO_LINESP, ls); fr_wr(ctx, FO_WRAP, wrapW);
         fr_wr(ctx, FO_ALIGN, mem_read32(ctx, wd + 0x274));
         uint32_t w2, h2; fr_measure_via_override(ctx, txt, &w2, &h2);
@@ -309,7 +373,7 @@ static FR_ARM int fr_fix_message_box(Context *ctx, uint32_t fn, uint32_t wd, uin
     fr_wr(ctx, FO_WRAP, saved[3]); fr_wr(ctx, FO_ALIGN, saved[4]); fr_wr(ctx, FO_SPACING, saved[5]);
     if (best < 0) return 0;
     FR_LOG("LAYOUT-FIX fn=%08X size=%d box.y %d->%d box.h %d->%d meas=(%d,%d) tx %d->%d\n", fn, ncw, by, nby, bh, nbh, nmw, nmh, tx, ntx);
-    mem_write32(ctx, wd + 0x260, ncw); mem_write32(ctx, wd + 0x264, ncw); mem_write32(ctx, wd + 0x268, fr_bits((float)nlsp));
+    mem_write32(ctx, wd + 0x260, ncw); mem_write32(ctx, wd + 0x264, ncw); mem_write32(ctx, wd + 0x268, fr_itof(nlsp));
     mem_write32(ctx, wd + 0x26C, nmw); mem_write32(ctx, wd + 0x270, nmh);
     mem_write32(ctx, wd + 0x28, nby); mem_write32(ctx, wd + 0x30, nbh); mem_write32(ctx, wd + 0x254, ntx);
     return 1;
@@ -420,5 +484,20 @@ RECOMP_OVERRIDE(0x0052CE38) {              /* CountLines(font, text, preprocess,
     if (lr0 >= 0x002B8C30u && lr0 < 0x002B9200u) { fr_blk_maxw = fr_last_meas_w; fr_blk_left = (int)ctx->r[0]; }   /* panel text drawn line by line */
     { char h_[64]; fr_text_head(ctx, txt, h_, 64); FR_LOG("COUNTLINES n=%d wrap=%d cw=%u lsp=%u '%s'\n", (int)ctx->r[0], (int)fr_rd(ctx, FO_WRAP), fr_rd(ctx, FO_CHARW), fr_rd(ctx, FO_LINESP), h_); }
 }
-RECOMP_OVERRIDE(0x0052CAF8) { CALL(RECOMP_ORIGINAL(0x0052CAF8)); }
+/* GetLine(font, out, text, i): line i of a multi-line widget (FUN_005412E0 draws them one by one). The original cuts at explicit newlines
+ * only, so a paragraph that our wrap splits in two overlaps the next line: from the widget draw, return the lines of the WRAPPED text. */
+RECOMP_OVERRIDE(0x0052CAF8) {
+    FR_ENSURE_BUDGET(ctx);
+    uint32_t lr = ctx->r[14], font = ctx->r[0], outp = ctx->r[1], txt = ctx->r[2]; int idx = (int)ctx->r[3];
+    if (!fr_wrap_disabled && font == FONT_OBJ && lr > 0x005412E0u && lr < 0x00541630u && (int)fr_rd(ctx, FO_WRAP) < 0x7FFFFFFF && idx >= 0 && !getenv("FR_NOGETLINE")) {
+        static uint8_t raw[1100], res[1100]; int len = 0;
+        while (len < 1050) { uint8_t b = mem_read8(ctx, txt + len); if (!b) break; raw[len++] = b; }
+        int more = len < 1050 ? fr_getline_core(raw, len, (int)fr_rd(ctx, FO_WRAP), (int)fr_rd(ctx, FO_CHARW), (int)fr_rd(ctx, FO_SPACING), idx, res, 1024) : -1;
+        if (more >= 0) {
+            for (int i = 0; ; i++) { mem_write8(ctx, outp + i, res[i]); if (!res[i]) break; }
+            ctx->r[0] = (uint32_t)more; ctx->r[14] = lr; RETURN_TO(lr);
+        }
+    }
+    CALL(RECOMP_ORIGINAL(0x0052CAF8));
+}
 RECOMP_OVERRIDE(0x00120E0C) { CALL(RECOMP_ORIGINAL(0x00120E0C)); }

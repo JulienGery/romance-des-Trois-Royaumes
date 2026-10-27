@@ -8,7 +8,7 @@ import json, os, re, struct, subprocess, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 BASE = 0x100000
 BSS_ORG, BSS_LEN = 0x81F000, 0x40000           # extension of .bss (page after the old end 0x81E978)
-PASS = {0x2373E0, 0x2372A4, 0x541794, 0x2DE710, 0x236170, 0x237858, 0x542430, 0x541710, 0x21B87C, 0x52D44C, 0x52CAF8, 0x120E0C, 0x2DEA30, 0x2DFAD8}
+PASS = {0x2373E0, 0x2372A4, 0x541794, 0x2DE710, 0x236170, 0x237858, 0x542430, 0x541710, 0x21B87C, 0x52D44C, 0x120E0C, 0x2DEA30, 0x2DFAD8}
 SRC = os.path.join(ROOT, 'src', 'overrides', 'fr_text.c'); FRARM = os.path.join(ROOT, 'src', 'arm')
 ARCH = ['-mcpu=arm1176jzf-s', '-mfpu=vfp', '-mfloat-abi=softfp']
 CFLAGS = [os.environ.get('FR_ARM_OPT', '-Os'), '-mthumb', '-mcpu=arm1176jzf-s', '-mfpu=vfp', '-mfloat-abi=softfp', '-fno-jump-tables'] + ['-ffreestanding', '-fno-pic', '-fno-exceptions', '-fno-inline-functions-called-once', '-ffunction-sections', '-fdata-sections', '-w', '-DFR_NATIVE',
@@ -65,6 +65,8 @@ def main(cin, cout, xin, xout):
                 p = line.split()
                 if len(p) >= 7 and re.match(r'\d+$', p[0]) and (p[1].startswith('.text') or p[1].startswith('.rodata')):
                     size = int(p[2], 16); al = 1 << int(p[-1].split('**')[1]) if '**' in p[-1] else 4
+                    m = re.match(r'\.text\.override_0x([0-9A-Fa-f]+)$', p[1])
+                    if m and int(m.group(1), 16) in PASS: continue          # pass-through overrides are never hooked: no room wasted on them
                     if size: secs.append((p[1], os.path.basename(o), size, max(al, 4)))
         cav = json.load(open(os.path.join(ROOT, 'data', 'cavities.json')))
         # the original measure FUN_0052CEA4 is fully replaced by the port (never called, its entry is hooked): the rest of its body is free
@@ -76,7 +78,7 @@ def main(cin, cout, xin, xout):
         for name, o, size, al in sorted(secs, key=lambda s: -s[2]):
             for fi, fr in enumerate(frags):
                 cur = (fr[2] + al - 1) & ~(al - 1)
-                if cur + size <= fr[0] + fr[1]:
+                if cur + size + 8 <= fr[0] + fr[1]:               # 8 bytes of slack: the linker's own alignment padding is not modelled here
                     place.setdefault(fi, []).append((name, o)); fr[2] = cur + size; break
             else: raise SystemExit(f'no cavity left for section {name} ({size} bytes)')
         used = sum(f[2] - f[0] for f in frags)
