@@ -6,7 +6,7 @@ Fonctionne sur la version japonaise **et** sur le patch FR/EN (même Title ID, l
 
 ```
 [60 FPS]
-006AFFDC 00000000
+006AFFDC 00000001
 006AFFE0 00000002
 ```
 
@@ -14,10 +14,14 @@ Fonctionne sur la version japonaise **et** sur le patch FR/EN (même Title ID, l
 
 ## Pourquoi ça marche (analyse du code.c / de l'ELF)
 
-- `0x6AFF00` est l'objet application (`DAT_00104af8`, passé à `main_loop` 0x105278). Son champ `+0xDC` (`param_1[0x37]`) est le **mode de cadence** : le jeu l'écrit à `2` une fois, à l'initialisation d'une scène (`mov r0,#2 ; str r0,[r1,#220]` en `0x21D764`). Toute autre valeur = 60 fps natif (valeur 0 par défaut dans le constructeur, donc le boot et les premiers écrans tournent déjà en 60 fps).
+- `0x6AFF00` est l'objet application (`DAT_00104af8`, passé à `main_loop` 0x105278). Son champ `+0xDC` (`param_1[0x37]`) est le **mode de cadence** : le jeu l'écrit à `2` une fois, à l'initialisation d'une scène (`mov r0,#2 ; str r0,[r1,#220]` en `0x21D764`). Toute autre valeur = 60 fps natif.
 - Si le mode vaut 2, `main_loop` règle l'intervalle d'échange du GPU à 2 VBlanks (`FUN_0010831c(gfx,2)`, 30 fps) ; sinon il le remet à 1 (60 fps).
 - Le moteur est à pas de temps variable, et gère les deux cadences nativement : `FUN_001085c8` prend 1/30 s (mode 2) ou 1/60 s comme durée nominale d'image, `main_loop` passe `dt × 60` aux mises à jour (2,0 en 30 fps, 1,0 en 60 fps), et le compteur d'images (`0x113B88`) avance de 2 ou 1. La vitesse du jeu reste donc la même, seule la fluidité change.
 - Le code écrit `0` à chaque image dans `0x6AFFDC` : même si le jeu remet `2`, le mode redescend à 60 fps à l'image suivante, et `main_loop` rétablit l'intervalle de 1 VBlank tout seul.
+
+## Pourquoi `1` et pas `0` (bug corrigé)
+
+Ce champ n'est pas qu'un drapeau : c'est aussi le **nombre de « ticks » 60 Hz par image** (2 en 30 fps, 1 en 60 fps). Le moteur s'en sert comme pas : le compteur d'images global l'additionne à chaque tour (`0x10A69C`, `0x106D10`), et les délais anti-doublon des effets sonores (30 emplacements, `FUN_00108e30`) sont décrémentés de cette valeur. Avec `0`, ces délais ne redescendaient jamais, donc les bruitages déjà joués (surtout ceux de l'interface) ne se redéclenchaient plus. Avec `1` ils redescendent normalement.
 
 ## Vérification (Zakuro, `--headless 2000`, ARM pur, jeu FR)
 

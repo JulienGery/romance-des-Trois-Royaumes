@@ -74,7 +74,7 @@ Le jeu tourne en 30 fps. Le code [`cheats/000400000018B000.txt`](cheats/00040000
 
 ```
 [60 FPS]
-006AFFDC 00000000
+006AFFDC 00000001
 006AFFE0 00000002
 ```
 
