@@ -9,6 +9,9 @@ B067DEF0 00000000
 00000148 00000001
 D3000000 00000000
 6067DBA0 00000000
+B067DBA0 00000000
+60000044 00000006
+D3000000 00000000
 B067DEF0 00000000
 00000148 00000002
 D2000000 00000000
@@ -24,7 +27,7 @@ D2000000 00000000
 
 ## Vidéos Moflex (retour à 30 fps pendant la lecture)
 
-Le lecteur de vidéos (`FUN_00548528` → `FUN_003871e8`) fait avancer l'image vidéo à chaque *affichage* du jeu : à 60 affichages par seconde, les vidéos passaient deux fois trop vite (audio décalé). Le code remet donc l'intervalle d'écran à `2` tant qu'un lecteur est ouvert : la ligne `6067DBA0 00000000` est vraie quand le pointeur du lecteur (`*(0x67DB64 + 0x3C)`, créé par `FUN_00121384`, remis à 0 à la fermeture) est non nul. `D2…` termine le bloc conditionnel. Les vidéos tournent comme dans le jeu d'origine, le reste du jeu en 60 fps.
+Le lecteur de vidéos (`FUN_00548528` → `FUN_003871e8`) fait avancer l'image vidéo à chaque *affichage* du jeu : à 60 affichages par seconde, les vidéos passaient deux fois trop vite (audio décalé). Le code remet donc l'intervalle d'écran à `2` tant qu'un lecteur est ouvert : la ligne `6067DBA0 00000000` est vraie quand le pointeur du lecteur (`*(0x67DB64 + 0x3C)`, créé par `FUN_00121384`, remis à 0 à la fermeture) est non nul. `D2…` termine le bloc conditionnel. Le pointeur restant non nul après la fin d'une vidéo (le lecteur n'est libéré qu'à la prochaine ouverture), ce qui ralentissait aussi les tutoriels, un second test (`B067DBA0` charge le pointeur comme offset, `60000044 00000006` : état du lecteur `+0x44` différent de 6 = « terminé ») ne force le 30 fps que pendant la lecture effective. `D3000000` remet l'offset à 0 avant l'écriture. Les vidéos tournent comme dans le jeu d'origine, le reste du jeu en 60 fps.
 
 ## Limites connues
 
