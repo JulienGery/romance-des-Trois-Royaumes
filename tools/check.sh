@@ -21,4 +21,5 @@ for L in $LANGS; do
   FR_LANG="$L" python3 -I check_atlas.py
   FR_LANG="$L" python3 -I translation/lint_translation.py | tail -4
 done
+cp build/font_sml.h ../src/overrides/font_sml.h
 cc -O1 -o build/wrap_test dev/wrap_test.c && echo "wrap_test compiled"

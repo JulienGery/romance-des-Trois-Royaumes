@@ -15,11 +15,14 @@ def _exe_words():
     # ELF image (development checkout) or the unpacked ExeFS code.bin (vaddr 0x100000 = offset 0) written by build_all.sh
     elf = os.path.join(ROOT, 'externals', 'exefs.elf'); cb = os.path.join(ROOT, 'work', 'rom', 'exefs_dir', 'code.bin')
     if os.path.exists(elf): return open(elf, 'rb').read()[0x50d000 + 0x615350 - 0x60c000:][:2139 * 4]
-    return open(cb, 'rb').read()[0x615350 - 0x100000:][:2139 * 4]
-jp = set()
-for c in struct.unpack('<2139I', _exe_words()):
-    try: jp.add(c.to_bytes(4, 'big').lstrip(b'\0').decode('utf8'))
-    except Exception: pass
+    if os.path.exists(cb): return open(cb, 'rb').read()[0x615350 - 0x100000:][:2139 * 4]
+    return None                                  # no game files (CI): the checks that need the game's own table are skipped
+jp = set(); _w = _exe_words()
+if _w is None: print('note: no game files found, the check of Japanese characters is skipped')
+else:
+    for c in struct.unpack('<2139I', _w):
+        try: jp.add(c.to_bytes(4, 'big').lstrip(b'\0').decode('utf8'))
+        except Exception: pass
 COLORS = set('brgpBRGPye') | {'G', 'R', 'B'}
 SIZE_TAGS = {'縮小', '倍角', '全角', '幅小'}
 TAG = re.compile(r'【([^】]*)】')
@@ -84,6 +87,7 @@ for t in range(1, 5):
             if c == '\n' or ord(c) < 0x20 or 0xE000 <= ord(c) <= 0xE07F: continue   # PUA E000-E07F = button icons (FUN_0052C690)
             if c in atlas: continue
             if c in jp: stats['jp_font_glyph'] += 1; continue
+            if _w is None and ord(c) > 0x2FFF: continue          # no game table: Japanese characters cannot be judged
             chars_missing[c] += 1
             add('ERROR', t, fn, line, f'no glyph for {c!r} (U+{ord(c):04X}) in French atlas nor Japanese font')
         if '  ' in plain: add('WARN', t, fn, line, 'double space')
