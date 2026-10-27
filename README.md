@@ -116,11 +116,13 @@ Le jeu tourne normalement à 30 FPS. Le code suivant vise à le faire passer à 
 
 ```text
 [60 FPS]
-006AFFDC 00000001
-006AFFE0 00000002
+006AFFDC 00000002
+B0000000 0067DEF0
+00000148 00000001
+D3000000 00000000
 ```
 
-Placez ce code dans `cheats/000400000018B000.txt` (Azahar/Citra ou Luma3DS/Rosalina), puis activez-le en jeu. Il a été vérifié sous Zakuro : les images sont dessinées en double, mais la vitesse du jeu reste la même. Il n'a pas été testé sur console réelle.
+Placez ce code dans `cheats/000400000018B000.txt` (Azahar/Citra ou Luma3DS/Rosalina), puis activez-le en jeu. Le jeu garde son timing d'origine et ne change que la fréquence d'affichage (images dessinées en double sous Zakuro). Il n'a pas été testé sur console réelle.
 
 Pour plus de détails, consultez [`cheats/README.md`](cheats/README.md).
 
