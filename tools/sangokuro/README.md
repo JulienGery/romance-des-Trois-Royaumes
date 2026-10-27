@@ -1,0 +1,1 @@
+`Sangokushi-GenerateTranslatedFiles.py` vient du projet [SangoKuro](https://github.com/JulienGery/SangoKuro) (MIT, © 2018 kuronosuFear, voir `LICENSE`). Modifications : alignement 4 octets des entrées, guillemets/apostrophes ASCII (la police française les contient). Les TSV qu'il lit sont dans `translations/<langue>/`.

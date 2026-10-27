@@ -36,4 +36,4 @@ En remplaçant les instructions de `main_loop`/`FUN_001085c8` par l'équivalent 
 
 ## Variante permanente (patch de code, sans moteur de triche)
 
-Remplacer l'instruction en `0x21D764` : `E3A00002` (`mov r0,#2`) → `E3A00001` (`mov r0,#1`). Équivaut à une entrée de `PATCHES` dans `fr_patch/arm_patches.py` (non ajoutée : cela changerait le SHA-256 du patch distribué).
+Remplacer l'instruction en `0x21D764` : `E3A00002` (`mov r0,#2`) → `E3A00001` (`mov r0,#1`). Équivaut à une entrée de `PATCHES` dans `tools/arm_patches.py` (non ajoutée : cela changerait le SHA-256 du patch distribué).

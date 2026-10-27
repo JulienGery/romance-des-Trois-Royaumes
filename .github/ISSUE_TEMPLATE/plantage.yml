@@ -1,0 +1,29 @@
+name: Plantage ou bug du patch
+description: Le jeu plante, se fige ou s'affiche mal
+labels: [bug]
+body:
+  - type: textarea
+    id: ou
+    attributes:
+      label: Où et que faisiez-vous juste avant ?
+    validations: {required: true}
+  - type: input
+    id: emu
+    attributes:
+      label: Émulateur et version
+    validations: {required: true}
+  - type: dropdown
+    id: base
+    attributes:
+      label: Le jeu non modifié fonctionne-t-il dans ce même émulateur jusqu'à la carte du monde ?
+      options: ["Oui", "Non", "Pas testé"]
+    validations: {required: true}
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version du patch
+      options: [Français, English]
+  - type: textarea
+    id: log
+    attributes:
+      label: Log de l'émulateur / capture (facultatif)

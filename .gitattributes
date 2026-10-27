@@ -1,0 +1,4 @@
+# les TSV doivent rester identiques au octet pres (le build est verifie par SHA-256)
+*.tsv -text
+*.sh text eol=lf
+*.xdelta binary

@@ -1,4 +1,4 @@
-# Crée la page de release GitHub quand un tag vX.Y est poussé (les patchs xdelta y sont ajoutés par fr_patch/publish_release.sh).
+# Crée la page de release GitHub quand un tag vX.Y est poussé (les patchs xdelta y sont ajoutés par tools/publish_release.sh).
 # Les patchs ne peuvent pas être construits ici : il faut la ROM d'origine du jeu (non redistribuable), le recompilateur et les TSV
 # de traduction, qui ne sont pas dans le dépôt.
 name: release

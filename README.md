@@ -80,15 +80,31 @@ Le jeu tourne en 30 fps. Le code [`cheats/000400000018B000.txt`](cheats/00040000
 
 À placer dans `cheats/000400000018B000.txt` (Azahar/Citra, ou Luma3DS/Rosalina), puis à activer dans la partie. Vérifié sous Zakuro (images dessinées ×2 ; la vitesse du jeu reste la même), non testé sur console. Explications : [`cheats/README.md`](cheats/README.md).
 
-## Contribuer / signaler un problème
+## Contribuer
 
-- Un texte mal traduit, une fenêtre qui déborde, un mot coupé bizarrement : ouvrez une [issue](https://github.com/JulienGery/romance-des-Trois-Royaumes/issues) avec une capture.
-- Un plantage : voir plus haut, c'est le cas le plus utile à me signaler.
+Tout le monde peut aider, même sans savoir programmer. Le guide complet est dans [**CONTRIBUTING.md**](CONTRIBUTING.md).
+
+- **Signaler** un texte mal traduit, une fenêtre qui déborde ou un plantage : ouvrez une [issue](https://github.com/JulienGery/romance-des-Trois-Royaumes/issues/new/choose) avec une capture (un plantage est le cas le plus utile à signaler, voir plus haut).
+- **Corriger la traduction** : les textes sont des fichiers TSV dans [`translations/`](translations/README.md) (`fr/` relu, `en/` brouillon DeepL à relire). Modifiez la colonne « Translated Text » et ouvrez une pull request.
+- **Améliorer le code** (moteur de texte ARM, outils de build) : voir [docs/TECHNIQUE.md](docs/TECHNIQUE.md).
+- **Dessiner** : les textures japonaises ne sont pas traduites (voir les avertissements).
+
+## Organisation du dépôt
+
+| Dossier | Contenu |
+|---|---|
+| `translations/` | textes traduits (TSV) par langue, noms officiels, glossaire |
+| `src/overrides/`, `src/arm/` | moteur de texte en C (police variable, retours à la ligne, bulles) et son runtime ARM |
+| `tools/` | pipeline de build (`patch_rom.py`…), `translation/` (lint, DeepL), `dev/` (analyse), `check.sh` |
+| `data/` | atlas de police pré-construit, cavités de code réutilisées |
+| `docs/` | documentation technique, `dev/` = spécifications et journal des modifications |
+| `cheats/` | code de triche 60 fps |
+| `externals/`, `work/` | *non versionnés* : outils tiers et dossiers de travail locaux (voir `tools/setup.sh`) |
 
 ## Pour les développeurs
 
-Compiler le patch soi-même, détails du moteur ARM, de la police, **traduire vers une autre langue** (DeepL, noms officiels, pipeline `fr_patch/build_language.sh`) et outils : [docs/TECHNIQUE.md](docs/TECHNIQUE.md). Spécifications et état du projet : [`rapport/HANDOVER.md`](rapport/HANDOVER.md) et [`rapport/JOURNAL_MODIFICATIONS.md`](rapport/JOURNAL_MODIFICATIONS.md).
+Compiler le patch soi-même, détails du moteur ARM, de la police, **traduire vers une autre langue** (DeepL, noms officiels, pipeline `tools/translation/build_language.sh`) et outils : [docs/TECHNIQUE.md](docs/TECHNIQUE.md). Spécifications et état du projet : [`docs/dev/HANDOVER.md`](docs/dev/HANDOVER.md) et [`docs/dev/JOURNAL_MODIFICATIONS.md`](docs/dev/JOURNAL_MODIFICATIONS.md).
 
 ## Mentions
 
-Projet de fan non officiel, sans but lucratif. *Yo-kai Watch* est une marque de LEVEL-5. Les noms anglais officiels des Yo-kai proviennent du [Yo-kai Watch Wiki](https://yokaiwatch.fandom.com) (CC BY-SA). Ce dépôt ne contient aucune ROM ni donnée du jeu, à une exception près : l'atlas de police pré-construit (`fr_patch/atlas/`) contient des glyphes dérivés des polices de Yo-kai Watch 2 (LEVEL-5), à retirer si le détenteur des droits le demande. `polices/Level5FontAtlas` est dérivé de [Kuriimu2](https://github.com/FanTranslatorsInternational/Kuriimu2) et reste sous **GPL-3.0**. Aucune licence n'a encore été choisie pour le reste du code.
+Projet de fan non officiel, sans but lucratif. *Yo-kai Watch* est une marque de LEVEL-5. Les noms anglais officiels des Yo-kai proviennent du [Yo-kai Watch Wiki](https://yokaiwatch.fandom.com) (CC BY-SA). Ce dépôt ne contient aucune ROM ni exécutable du jeu. Deux éléments en sont dérivés : l'atlas de police pré-construit (`data/atlas/`, glyphes dérivés des polices de Yo-kai Watch 2) et les fichiers de traduction `translations/*/*.tsv`, qui gardent le texte japonais d'origine en regard de chaque phrase. À retirer si le détenteur des droits le demande. `tools/fontatlas` est dérivé de [Kuriimu2](https://github.com/FanTranslatorsInternational/Kuriimu2) et reste sous **GPL-3.0**. Aucune licence n'a encore été choisie pour le reste du code.

@@ -1,0 +1,20 @@
+name: Erreur de traduction ou d'affichage
+description: Un texte mal traduit, une fenêtre qui déborde, un mot coupé bizarrement
+labels: [traduction]
+body:
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      options: [Français, English]
+    validations: {required: true}
+  - type: textarea
+    id: ou
+    attributes:
+      label: Où dans le jeu ?
+      description: Chapitre, personnage, écran. Une capture d'écran est très utile.
+    validations: {required: true}
+  - type: textarea
+    id: proposition
+    attributes:
+      label: Texte actuel et correction proposée
