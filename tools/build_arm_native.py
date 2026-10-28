@@ -73,7 +73,7 @@ def main(cin, cout, xin, xout):
         cav.append([0x52CEA8, 0x52D340])
         # Thumb `bl` reaches +-4 MiB: keep every fragment within one 4 MiB window so no long-branch stubs are needed
         cav = [c for c in cav if c[0] >= 0x180000 and c[1] <= 0x57F000]
-        frags = sorted(([a, b - a, a] for a, b in cav if b - a >= 128), key=lambda r: -r[1])   # [org, free, cursor]
+        frags = sorted(([a, b - a, a] for a, b in cav if b - a >= 120), key=lambda r: -r[1])   # [org, free, cursor]
         place = {}
         for name, o, size, al in sorted(secs, key=lambda s: -s[2]):
             for fi, fr in enumerate(frags):
@@ -104,6 +104,8 @@ def main(cin, cout, xin, xout):
             raw = os.path.join(td, f'f{fi}.bin'); run(['arm-none-eabi-objcopy', '-O', 'binary', '-j', f'.f{fi}', elf, raw]); parts[fi] = open(raw, 'rb').read()
         sz = out(['arm-none-eabi-size', elf]).split('\n')[1].split()
     print(f'native code {sum(len(p) for p in parts.values())} bytes in {len(parts)} cavities, bss used {sz[2]} bytes')
+    if os.environ.get('FR_SHOW_CAV'):
+        for fi in sorted(parts): print(f'  cavity {frags[fi][0]:#08x}..{frags[fi][0]+frags[fi][1]:#08x} used {len(parts[fi])}')
     for fi, blob in parts.items():
         assert len(blob) <= frags[fi][1]
         code[frags[fi][0] - BASE:frags[fi][0] - BASE + len(blob)] = blob

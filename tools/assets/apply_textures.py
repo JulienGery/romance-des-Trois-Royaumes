@@ -20,7 +20,7 @@ from g1t_tools import split_g1t, build_g1t  # noqa: E402
 from g1t_encode import encode_level  # noqa: E402
 
 
-def replace_textures(g1t_bytes, new):
+def replace_textures(g1t_bytes, new, allow_resize=False):
     """new: {tex_index: PIL RGBA image}. Retourne le G1T reconstruit."""
     g, ents = split_g1t(g1t_bytes)
     for ti, img in new.items():
@@ -28,7 +28,7 @@ def replace_textures(g1t_bytes, new):
         hdr = 8 + t.ext_hdr_size
         head = bytearray(ents[ti][:hdr])
         if img.size != (t.width, t.height):
-            if not os.environ.get('YOKAI_ALLOW_RESIZE'):
+            if not (allow_resize or os.environ.get('YOKAI_ALLOW_RESIZE')):
                 raise SystemExit(f'texture {ti}: {img.size} au lieu de {(t.width, t.height)} (les dimensions doivent rester identiques ; YOKAI_ALLOW_RESIZE=1 pour un essai)')
             w, h = img.size
             assert w & (w - 1) == 0 and h & (h - 1) == 0 and not (t.mip_unk >> 4) > 1, 'redimensionnement : puissances de 2, sans mipmaps'
@@ -49,7 +49,7 @@ def texture_items(arc, pngdir):
         if m:
             if int(m[1]) == 0: raise SystemExit('l\'entrée 0 (atlas de police) est gérée par make_entry0.py, pas par les textures')
             groups.setdefault(int(m[1]), {})[int(m[2])] = Image.open(os.path.join(pngdir, f)).convert('RGBA')
-    return {e: (replace_textures(arc.read_entry_decompressed(e), t), arc.entries[e].is_compressed) for e, t in groups.items()}
+    return {e: (replace_textures(arc.read_entry_decompressed(e), t, 12205 <= e < 12205 + 0x2A8), arc.entries[e].is_compressed) for e, t in groups.items()}   # plaques de noms : redimensionnement autorisé
 
 
 def main():

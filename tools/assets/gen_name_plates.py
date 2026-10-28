@@ -3,7 +3,7 @@
 
 Libellé = traduction du jeu (script 57, entrée 0, colonne « Translated Text »), déjà en noms officiels des Yo-kai.
 Lien plaque <-> ligne : entrée LINKDATA = 12205 + numéro de ligne.
-Les dimensions de la texture doivent rester identiques : sur les plaques 64 px de large, le texte est réduit.
+Les plaques de 32/64 px de large sont élargies à 128 px (le tableau de dimensions du jeu est patché au build : patch_plate_table.py).
 
   gen_name_plates.py --out DOSSIER [--preview apercu.png] [--lines 0,75]
 """
@@ -47,11 +47,12 @@ def main():
         ref = os.path.join(a.png, f'{BASE + i}_0.png')
         if not os.path.exists(ref): continue
         im = Image.open(ref)
-        if im.size[1] != 32 or im.size[0] not in (64, 128): continue
+        if im.size[1] != 32 or im.size[0] not in (32, 64, 128): continue
         text = re.sub(r'【([^：】]*)：[^】]*】', r'\1', fr[i][1])
         import numpy as np
         ys, xs = np.where(np.asarray(im.convert('RGBA'))[:, :, 3] > 150); ow = int(xs.max()) + 1                       # (largeur japonaise, plus utilisée : le tableau du jeu est patché, voir patch_plate_table.py)
-        render(text, im.size[0]).save(os.path.join(a.out, f'{BASE + i}_0.png')); done.append((BASE + i, text))
+        render(text, 128).save(                                           # les plaques étroites (64/32 px) passent à 128 px : tableau du jeu patché (patch_plate_table.py)
+            os.path.join(a.out, f'{BASE + i}_0.png')); done.append((BASE + i, text))
     print(len(done), 'plaques ->', a.out)
     if a.preview:
         sel = done[::max(1, len(done) // 24)][:24]

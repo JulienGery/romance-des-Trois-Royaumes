@@ -2,7 +2,7 @@
 """Met à jour dans code.bin la largeur des plaques de noms (Yo-kai + officier).
 
 Le jeu aligne chaque plaque à droite d'après un tableau de données de 16 octets par plaque (pointeur en 0x14BA48, tableau en 0x628140 dans la ROM d'origine) :
-  +8 u16 = largeur de la pilule (px), +10 u16 = hauteur ; indexé par ligne du script 57/0 (entrée LINKDATA = 12205 + ligne).
+  +8 u16 = largeur de la pilule (px), +10 u16 = hauteur, +12 u16 = largeur de la texture, +14 u16 = hauteur de la texture ; indexé par ligne du script 57/0 (entrée LINKDATA = 12205 + ligne).
 Vérifié sur les 232 plaques japonaises : largeur du tableau == largeur visible de la pilule.
 On y écrit la largeur visible des PNG français de translations/<langue>/textures/ pour qu'ils restent alignés.
 
@@ -29,8 +29,9 @@ def main():
         w = int(xs.max()) + 1
         off = tab + L * 16 + 8
         old = struct.unpack_from('<H', d, off)[0]
-        assert 0 < old <= 128, (L, old)                       # on ne touche qu'à de vraies entrées de plaque
+        assert 0 < old <= 128 and struct.unpack_from('<H', d, off + 4)[0] in (32, 64, 128), (L, old)       # on ne touche qu'à de vraies entrées de plaque
         if old != w: struct.pack_into('<H', d, off, w); n += 1
+        struct.pack_into('<HH', d, off + 4, a.shape[1], a.shape[0])               # dimensions de la texture (plaques élargies à 128 px)
     open(dst, 'wb').write(d)
     print(f'{n} largeurs de plaques mises à jour (tableau en 0x{tab + 0x100000:X})')
 
