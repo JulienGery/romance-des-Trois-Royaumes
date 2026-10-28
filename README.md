@@ -22,8 +22,9 @@
 
 | Version | Fichier | SHA-256 du jeu patché |
 |---|---|---|
-| **Français** — traduction relue | `YokaiWatchSangokushi-FR.xdelta` | `58790bb425bacc44aff1839be88b38a04b9477f404ed96465197a82e76f6731b` |
-| **English** — traduction DeepL à relire | `YokaiWatchSangokushi-EN.xdelta` | `2f316b55ef9fd89971212469749518fccef3c5afa6e0a1daa4be70052544ecef` |
+| **Français** — traduction relue | `YokaiWatchSangokushi-FR.xdelta` | `501bdb2a0c60aefb6d397946f4b289888964511141498c07dd333a90e14d54b6` |
+| **Français + images traduites** — bandeaux, plaques de noms, interface | `YokaiWatchSangokushi-FR-assets.xdelta` | `34fc7b5c58a404581e81ad224b7bbb5611e5d6b79c05156b44f61d7712f9244a` |
+| **English** — traduction DeepL à relire | `YokaiWatchSangokushi-EN.xdelta` | `6dcd0b3186353404d88b8f57ab6048ed10cab051cc2830fc4dcc54c33b6d22d8` |
 
 Téléchargez le fichier `.xdelta` souhaité dans la section [Releases](https://github.com/JulienGery/romance-des-Trois-Royaumes/releases).
 
