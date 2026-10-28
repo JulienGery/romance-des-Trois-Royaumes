@@ -96,7 +96,9 @@ static int fr_wrap_guest(Context *c, uint32_t buf, int maxc, int *complete) {
     static uint8_t in[1100], out[1100];
     int len = fr_read_guest(c, buf, in);
     if (len < 0) return 0;
-    int ol = fr_wrap_text(in, len, out, 1024, (int)fr_rd(c, FO_WRAP), (int)fr_rd(c, FO_CHARW), (int)fr_rd(c, FO_SPACING), maxc, complete);
+    int W = (int)fr_rd(c, FO_WRAP), cw = (int)fr_rd(c, FO_CHARW), sp = (int)fr_rd(c, FO_SPACING), fl = FRW_REFLOW | FRW_BALANCE, ol;
+    if (W == FR_BUBBLE_W && (ol = fr_wrap_text2(in, len, out, 1024, W, cw, sp, -1, NULL, fl)) >= 0 && fr_count_lines(out, ol) > 4) fl = FRW_REFLOW_ALL | FRW_BALANCE;   /* a dialogue bubble holds 4 lines */
+    ol = fr_wrap_text2(in, len, out, 1024, W, cw, sp, maxc, complete, fl);
     if (ol < 0) return 0;
     for (int i = 0; i <= ol; i++) mem_write8(c, buf + i, out[i]);
     return 1;
@@ -105,6 +107,7 @@ static int fr_wrap_guest(Context *c, uint32_t buf, int maxc, int *complete) {
 /* ---- text fit: fixed-box windows (no layout function sizes them, e.g. Whisper's bottom dialogue box 2,166,396,72).
  * 0x005412E0 sets fr_fit_h (text height available in the box) around the draw; the preprocess then picks the first layout that fits:
  * normal wrap, full reflow, tighter line spacing, then 14 and 12 px. Deterministic: same input -> same output every frame. */
+static int fr_fit_w;                                  /* wrap width used by the fixed-box fit when it differs from the widget's */
 static int fr_fit_h;                                  /* >0 while a fixed-box widget draws */
 static int fr_fit_base_valid, fr_fit_base_cw, fr_fit_base_lsp, fr_fit_ap_cw, fr_fit_ap_lsp;   /* font params before / after our change */
 static uint32_t fr_managed[64]; static int fr_managed_n;   /* widgets sized by a layout function or bubble init: never fitted */
@@ -126,7 +129,7 @@ static int fr_fit_guest(Context *c, uint32_t buf, int maxc, int *complete) {
         st[ns++] = (fr_step){ sz, tight, FRW_REFLOW | FRW_BALANCE };
         st[ns++] = (fr_step){ sz, tight, FRW_REFLOW_ALL | FRW_BALANCE };
     }
-    int pick = fr_pick_step(c, buf, in, len, (int)fr_rd(c, FO_WRAP), fr_fit_h, st, ns, (int)fr_rd(c, FO_SPACING), maxc, complete);
+    int pick = fr_pick_step(c, buf, in, len, fr_fit_w ? fr_fit_w : (int)fr_rd(c, FO_WRAP), fr_fit_h, st, ns, (int)fr_rd(c, FO_SPACING), maxc, complete);
     if (pick < 0) return 0;
     if (st[pick].size != cw || st[pick].lsp != lsp) {
         fr_fit_base_valid = 1; fr_fit_base_cw = cw; fr_fit_base_lsp = lsp; fr_fit_ap_cw = st[pick].size; fr_fit_ap_lsp = st[pick].lsp;
@@ -175,6 +178,7 @@ static int fr_center_guest(Context *c, uint32_t buf, int maxc, int *complete) { 
 static int fr_edge_r, fr_edge_b;
 static int fr_edge_rule(void) {
     int x = fr_ctr_xi, y = fr_ctr_yi;
+    if (x >= 100 && x <= 115 && y >= 60 && y <= 68) { fr_edge_r = 376; fr_edge_b = 0; return 1; }   /* quest title: one line, shrink */
     if (x >= 200 && x < 300) { fr_edge_r = 376; fr_edge_b = y < 150 ? 156 : 222; return 1; }
     if (x >= 16 && x < 40 && y >= 160 && y < 200) { fr_edge_r = 196; fr_edge_b = 224; return 1; }
     if (x >= 20 && x < 40 && y >= 100 && y < 150) { fr_edge_r = 378; fr_edge_b = 210; return 1; }
@@ -184,6 +188,7 @@ static int fr_edge_rule(void) {
  * (14 px + 7) run below it. Same text fit as the fixed boxes, with the height left in the panel. */
 static int fr_bio_avail(int wrap, int cw) {
     int y = fr_ctr_yi;
+    if (cw == 14 && wrap >= 255 && wrap <= 265 && y >= 188 && y <= 194) { fr_fit_w = 304; return 238 - y; }   /* quest description, bottom of the screen */
     return cw == 14 && wrap >= 330 && wrap <= 345 && y >= 118 && y <= 126 ? 210 - y : 0;
 }
 static int fr_edge_guest(Context *c, uint32_t buf, int maxc, int *complete) {
@@ -192,6 +197,7 @@ static int fr_edge_guest(Context *c, uint32_t buf, int maxc, int *complete) {
     if (len < 0) return 0;
     int cw = (int)fr_rd(c, FO_CHARW), lsp = (int)fr_rd(c, FO_LINESP), sp = (int)fr_rd(c, FO_SPACING);
     int W = fr_edge_r - fr_ctr_xi; if (W < 100) return 0;
+    if (!fr_edge_b) { int mx = frw_max_line(in, len, cw, sp), sz = cw * W / (mx ? mx : 1); if (mx > W) { if (sz < 11) sz = 11; fr_wr(c, FO_CHARW, sz); fr_wr(c, FO_CHARH, sz); } return 0; }
     int availH = fr_edge_b - fr_ctr_yi, n0 = fr_count_lines(in, len);
     if (frw_max_line(in, len, cw, sp) <= W && n0 * cw + (n0 - 1) * lsp <= availH) return 0;
     int tight = lsp < 2 ? lsp : 2, ns = 0;
@@ -244,6 +250,7 @@ RECOMP_OVERRIDE(0x0052C690) {
     if (bio) fr_fit_h = bio;
     int done = fr_fit_h > 0 ? fr_fit_guest(ctx, buf, (int)maxc, &complete) : fr_wrap_guest(ctx, buf, (int)maxc, &complete);
     if (bio) fr_fit_h = 0;
+    fr_fit_w = 0;
     if (done) {
         fr_prewrapped = 1;
         ctx->r[0] = complete ? 1 : 0; ctx->r[14] = lr;
