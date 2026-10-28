@@ -17,9 +17,17 @@ else
 fi
 cp build/font_sml.h ../src/overrides/font_sml.h
 python3 -I make_entry0.py ../work/rom/entry0/entry0.g1t build/entry0_fr.g1t
+PYT=python3; [ -x ../work/venv/bin/python ] && PYT=../work/venv/bin/python   # venv (Pillow, numpy) : seulement requis pour les textures retouchées
+[ -f ../work/rom/exefs_orig.bin ] || cp ../work/rom/exefs.bin ../work/rom/exefs_orig.bin       # exefs d'origine (jamais modifié)
+cp ../work/rom/exefs_orig.bin ../work/rom/exefs.bin
 ../externals/3dstool -xtfu exefs ../work/rom/exefs.bin --exefs-dir ../work/rom/exefs_dir --header ../work/rom/exefs_header.bin >/dev/null
+TEX="../translations/${FR_LANG:-fr}/textures"
+if [ -z "$YOKAI_NO_ASSETS" ] && ls "$TEX"/12*_0.png >/dev/null 2>&1; then      # largeurs des plaques de noms (tableau de données du jeu) : voir tools/assets/patch_plate_table.py
+  $PYT -I assets/patch_plate_table.py ../work/rom/exefs_dir/code.bin ../work/rom/exefs_dir/code.bin "$TEX"
+  ../externals/3dstool -ctf exefs ../work/rom/exefs.bin --exefs-dir ../work/rom/exefs_dir --header ../work/rom/exefs_header.bin --compress >/dev/null
+fi
 python3 -I translation/lint_translation.py --strict | head -3
-python3 -I apply_translation.py build ../work/rom/romfs_dir/Data/LINKDATA_A.BIN build/LINKDATA_A.BIN
+$PYT -I apply_translation.py build ../work/rom/romfs_dir/Data/LINKDATA_A.BIN build/LINKDATA_A.BIN
 cd ../work/rom
 rm -rf romfs_dir_fr && cp -Rc romfs_dir romfs_dir_fr
 cp ../../tools/build/LINKDATA_A.BIN romfs_dir_fr/Data/LINKDATA_A.BIN

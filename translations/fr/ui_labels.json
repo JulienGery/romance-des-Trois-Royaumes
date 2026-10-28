@@ -1,0 +1,210 @@
+{
+ "_doc": "Libellés d'interface dessinés dans les atlas. Pour chaque atlas <entrée>_<tex> : box = [x, y, w, h] du sprite (ou de la zone de texte pour kind=tile), text = français, kind = plain (sprite de texte sur fond transparent) ou tile (texte posé sur une tuile : effacé puis retouché par inpainting), text_dx = décalage x du début du texte (garder l'icône à gauche). Outil : tools/assets/gen_ui_labels.py ; repérage : tools/assets/find_labels.py",
+ "26_0": [
+  {
+   "box": [
+    13,
+    308,
+    99,
+    23
+   ],
+   "text": "Continuer",
+   "kind": "plain",
+   "style": "title"
+  },
+  {
+   "box": [
+    130,
+    306,
+    113,
+    27
+   ],
+   "text": "Continuer",
+   "kind": "plain",
+   "style": "title"
+  },
+  {
+   "box": [
+    260,
+    308,
+    101,
+    24
+   ],
+   "text": "Commencer",
+   "kind": "plain",
+   "style": "title"
+  },
+  {
+   "box": [
+    377,
+    306,
+    115,
+    27
+   ],
+   "text": "Commencer",
+   "kind": "plain",
+   "style": "title"
+  },
+  {
+   "box": [
+    277,
+    274,
+    170,
+    25
+   ],
+   "text": "Lien Yo-kai Watch Blasters",
+   "kind": "plain",
+   "style": "title"
+  },
+  {
+   "box": [
+    462,
+    274,
+    159,
+    25
+   ],
+   "text": "Lien Yo-kai Watch 2",
+   "kind": "plain",
+   "style": "title"
+  }
+ ],
+ "8_3": [
+  {
+   "box": [
+    706,
+    321,
+    100,
+    28
+   ],
+   "text": "Sortie",
+   "kind": "plain",
+   "text_dx": 28,
+   "style": "map",
+   "size": 16,
+   "thin": 0.8,
+   "align": "left",
+   "text_x": 30,
+   "vcenter": true
+  },
+  {
+   "box": [
+    473,
+    661,
+    76,
+    28
+   ],
+   "text": "Aller",
+   "kind": "plain",
+   "text_dx": 28,
+   "style": "map",
+   "size": 16,
+   "thin": 0.8,
+   "align": "left",
+   "text_x": 30,
+   "vcenter": true
+  },
+  {
+   "box": [
+    352,
+    686,
+    103,
+    27
+   ],
+   "text": "Entraîner",
+   "kind": "plain",
+   "text_dx": 28,
+   "style": "map",
+   "size": 16,
+   "thin": 0.8,
+   "align": "left",
+   "text_x": 30,
+   "vcenter": true
+  },
+  {
+   "box": [
+    238,
+    686,
+    89,
+    26
+   ],
+   "text": "Quêtes",
+   "kind": "plain",
+   "text_dx": 25,
+   "style": "map",
+   "size": 16,
+   "thin": 0.8,
+   "align": "left",
+   "text_x": 30,
+   "vcenter": true
+  },
+  {
+   "box": [
+    593,
+    690,
+    85,
+    26
+   ],
+   "text": "Yo-kai",
+   "kind": "plain",
+   "text_dx": 21,
+   "style": "map",
+   "size": 16,
+   "thin": 0.8,
+   "align": "left",
+   "text_x": 30,
+   "vcenter": true
+  }
+ ],
+ "21_0": [
+  {
+   "box": [
+    28,
+    190,
+    80,
+    30
+   ],
+   "text": "Objet",
+   "kind": "tile"
+  },
+  {
+   "box": [
+    175,
+    178,
+    82,
+    28
+   ],
+   "text": "Technique",
+   "kind": "tile"
+  },
+  {
+   "box": [
+    270,
+    198,
+    85,
+    28
+   ],
+   "text": "Envoûtement",
+   "kind": "tile"
+  },
+  {
+   "box": [
+    596,
+    168,
+    80,
+    30
+   ],
+   "text": "Attaque",
+   "kind": "tile"
+  },
+  {
+   "box": [
+    271,
+    372,
+    54,
+    21
+   ],
+   "text": "Suivant",
+   "kind": "plain"
+  }
+ ]
+}

@@ -14,4 +14,5 @@ if [ ! -d externals/LINKDATA-explorer ]; then
   echo "clone    LINKDATA-explorer"
   git clone --depth 1 https://github.com/JulienGery/LINKDATA-explorer.git externals/LINKDATA-explorer
 else echo "ok       externals/LINKDATA-explorer"; fi
+[ -x work/venv/bin/python ] && echo "ok       work/venv (textures)" || echo "optional work/venv pour les textures : python3 -m venv work/venv && work/venv/bin/pip install pillow numpy"
 [ "$ok" = 1 ] && echo "Pret : python3 tools/patch_rom.py ORIGINAL.cci sortie.cxi --verify" || { echo "Des outils manquent (voir ci-dessus)."; exit 1; }

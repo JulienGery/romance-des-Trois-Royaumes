@@ -32,6 +32,7 @@ def extract(rom):
     run([os.path.join(ROOT, 'externals', '3dstool'), '-xvtf', 'cxi', cxi, '--header', os.path.join(RW, 'header.bin'), '--exh', os.path.join(RW, 'exheader.bin'),
          '--logo', os.path.join(RW, 'logo.bin'), '--plain', os.path.join(RW, 'plain.bin'), '--exefs', os.path.join(RW, 'exefs.bin'),
          '--romfs', os.path.join(RW, 'romfs.bin')], stdout=subprocess.DEVNULL)
+    shutil.copyfile(os.path.join(RW, 'exefs.bin'), os.path.join(RW, 'exefs_orig.bin'))     # exefs d'origine, base de build_all.sh
     hdr = open(os.path.join(RW, 'header.bin'), 'rb').read(0x200)
     if hdr[0x100:0x104] != b'NCCH': sys.exit('not an NCCH: is the dump decrypted?')
     tid = struct.pack('<Q', struct.unpack_from('<Q', hdr, 0x118)[0])[::-1].hex()

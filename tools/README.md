@@ -20,8 +20,9 @@ Tous les scripts se lancent depuis n'importe quel dossier ; ils retrouvent la ra
 
 ## Sous-dossiers
 
-- `translation/` : `lint_translation.py`, `fix_translation_tags.py`, `scan_translation_issues.py`, DeepL (`translate_deepl.py`, `build_language.sh`), noms officiels (`yokai_names.py`, `apply_names.py`), `apply_manual.py`, `layout_text.py`.
+- `translation/` : `lint_translation.py`, `fix_translation_tags.py`, `scan_translation_issues.py`, DeepL (`translate_deepl.py`, `build_language.sh`), noms officiels (`yokai_names.py`, `apply_names.py`), `skill_names.py` (noms officiels des compétences, wikis EN+FR), `apply_manual.py`, `layout_text.py`.
 - `dev/` : analyse du code mort et des cavités (`dead_code.py`, `cavity_*.py`, `make_trap_rom.sh`; nécessitent la décompilation Ghidra, non fournie), corpus de test de la coupe de lignes.
+- `assets/` : extraction des textures (PNG), galerie par famille, ré-encodage G1T et injection des textures retouchées (`README.md` dédié).
 - `sangokuro/` : générateur de scripts du projet [SangoKuro](https://github.com/JulienGery/SangoKuro) (MIT, légèrement modifié).
 - `fontatlas/` : outil .NET dérivé de Kuriimu2 (GPL-3.0) pour extraire les polices de Yo-kai Watch 2.
 - `build/` *(ignoré)* : sorties intermédiaires.

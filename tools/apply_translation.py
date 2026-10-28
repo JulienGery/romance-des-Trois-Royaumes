@@ -69,5 +69,9 @@ if __name__ == '__main__':
             items[idx] = (data, e.is_compressed)
         e0 = os.path.join(HERE, 'build', 'entry0_fr.g1t')
         if os.path.exists(e0): items[0] = (open(e0, 'rb').read(), True)
+        tex = os.path.join(TSV_DIR, 'textures')                      # textures retouchées (tools/assets/README.md)
+        if not os.environ.get('YOKAI_NO_ASSETS') and os.path.isdir(tex) and any(f.endswith('.png') for f in os.listdir(tex)):
+            sys.path.insert(0, os.path.join(HERE, 'assets')); from apply_textures import texture_items
+            ti = texture_items(a, tex); items.update(ti); print(f'{len(ti)} textures retouchées ({tex})')
         n = patch_many(arch_path, dst, items)
         print(f'{n} entries patched ({len(gen)} scripts' + (' + entry 0 font atlas' if 0 in items else '') + f') -> {dst} ({os.path.getsize(dst)/1e6:.1f} MB)')

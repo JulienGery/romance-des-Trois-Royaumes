@@ -1,0 +1,473 @@
+# Compétences du jeu (script 57, entrée 6) : ligne<TAB>japonais<TAB>français actuel<TAB>anglais officiel<TAB>français officiel<TAB>source<TAB>note ; généré par tools/translation/skill_names.py (wikis Yo-kai Watch EN+FR, CC BY-SA)
+0	ツンツンようじ	Cure-dents acéré	Pointy Toothpick		EN seul	
+1	だましだましぶっさし	Pique fourbe	Ninja Stab		EN seul	
+2	さみだれようじ	Averse de cure-dents	Toothpick Rainfall		EN seul	
+3	きりこみ一番	Assaut en tête				
+4	ポクチン念仏	Prière de l'oraison	Croaking Prayer		EN seul	
+5	やめはめ波	Onde de renoncement	Yawnehameha		EN seul	
+6	スーパーやめはめ波	Super onde de renoncement	Yawnehameha X		EN seul	
+7	モチモチ拳	Poing du riz gluant				
+8	やきモチ拳	Poing de la jalousie				
+9	宝のもちぐされ拳	Poing du gâchis de talent	Impulsive Punch		EN seul	
+10	だらけチョップ	Coup de paresse	Halfhearted Chop		EN seul	
+11	ザンバラッシュ	Ruée échevelée	Resigned Rush		EN seul	
+12	怪刀だんびら	Sabre mystérieux	Phantom Smash	Mèches effilées	via EN	
+13	真剣大バクチ	Quitte ou double sérieux	Go for Broke	Passe ou casse	wiki FR+EN	
+14	ハッタリ大バクチ	Grand bluff risqué				
+15	名刀マサムネ	Épée légendaire	Legendary Slash	Entaille mythique	wiki FR+EN	
+16	神剣クサナギ	Épée sacrée	Holy Slash	Entaille sacrée	wiki FR+EN	
+17	なまくらぶれーど	Lame émoussée	Blunt Blade		EN seul	
+18	妖刀ムラマサ	Épée maudite	Demonic Slash	Entaille du démon	wiki FR+EN	
+19	かぶってカブト	Casque sur le chef	Helmsman Helm	Ultimatheaume	wiki FR+EN	
+20	ゲンマ斬	Tranchant Bushidos				
+21	黄泉おくり	Vers les Enfers	Ticket to Hades		EN seul	
+22	ばかちんとんま斬	Tranchant stupide				
+23	正拳バーニング	Poing ardent authentique	Blazing Fist	Poing de feu	wiki FR+EN	
+24	大地わり	Fissure tellurique	Earthshaker	Attaque sismique	wiki FR+EN	
+25	轟のかまえ	Posture rugissante	Roaring Stance		EN seul	
+26	ぺらぺらフレイム	Flamme bavarde	Narrow Margin		EN seul	
+27	おおバサミ	Grosses pinces	Big Pincers		EN seul	
+28	ブラックシザーズ	Cisailles noires	Black Scissors		EN seul	
+29	地獄バサミ	Pinces infernales	Infernal Pincers		EN seul	
+30	大切断	Grande découpe	The Guillotine		EN seul	
+31	九九九刀	999 lames				
+32	からくりマシンガン	Mitrailleuse mécanique	B3-NK1 GUN	Fusil B3-NK1	wiki FR+EN	
+33	むしゃくしゃアタック	Attaque rageuse	Zerberker Slash		EN seul	
+34	悪い子イネガー	Où sont les vilains enfants	For Naughty Brats	Sales gamins	wiki FR+EN	
+35	むちゃくちゃ乱舞	Danse forcenée	Crazy Wild Dance		EN seul	
+36	びろ～んビンタ	Gifle élastique	Stretchy Slap	Baffe élastique	wiki FR+EN	
+37	はくしょんスパイク	Pointe atchoum	Sneezy Spike	Goutte au nez	wiki FR+EN	
+38	三つ目読心術	Lecture mentale triple	Third Eye	Troisième œil	wiki FR+EN	
+39	四つ目読命術	Lecture vitale quadruple	Foursight	Aspiritisme	wiki FR+EN	
+40	心もぐり術	Plongée dans les cœurs	Heart Speakeasy Surgery		EN seul	
+41	スグワスレ～ル	Oubli-vite	Wuwuzzat?		EN seul	
+42	おバカワールド	Monde des imbéciles	Ignorance is Bliss		EN seul	
+43	こそどろろ～ん	Larcin furtif	Sneaky Thief		EN seul	
+44	ちゅ～ちゅ～ドレイン	Drain suceur	Mwabsorption		EN seul	
+45	魂すぃ～キッスブルー	Baiser de l'âme bleue	Blue Kiss		EN seul	
+46	やまとクラッシュ	Fracas antique	Sushiyama Strike	Sushiyamattaque	wiki FR+EN	
+47	大見得ボンバー	Explosion théâtrale	Boastful Bomber		EN seul	
+48	おじゃまむしスタンプ	Tampon de l'importun	Bothersome Stomp		EN seul	
+49	いやしのなげキッス	Baiser soignant	Kiss of Life		EN seul	
+50	猿まね投げキッス	Baiser d'imitation	Kiss Kiss Bang		EN seul	
+51	ボクのハート天国	Mon cœur au paradis	Heavenly Heart	De tout mon cœur	wiki FR+EN	
+52	恋こがれファイヤー	Flamme de la passion	Fiery Longing	Amour brûlant	wiki FR+EN	
+53	愛のビンタ	Gifle d'amour	Loving Slap		EN seul	
+54	ホネホネチョップ	Coup tranchant osseux	Skeleton Smack		EN seul	
+55	かっさらいビンタ	Gifle ravisseuse	Pilferer Slap		EN seul	
+56	大音量ババァーン！	Fracas assourdissant !	Max Volume 11!	Volume à fond !	wiki FR+EN	
+57	ネムケムリ	Fumée ensommeillante	Sleepy Smoke	Soporifumée	wiki FR+EN	
+58	白昼夢	Rêve éveillé	Daydream	Rêve éveillé	wiki FR+EN	identique
+59	デンデンショック	Choc électrique	Signal Shock	Choc électrique	wiki FR+EN	identique
+60	でんじんサンダー	Foudre d'Émettor	Ton o' Thunder	Foudr'invocation	wiki FR+EN	
+61	メガギガチャージ	Charge méga-giga	Giga Turbocharge	Giga recharge	wiki FR+EN	
+62	かがみよかがみ	Miroir, ô miroir	Mirror to Mirror	Tourne-miroir	wiki FR+EN	
+63	まっくらワールド	Monde ténébreux	Dark World		EN seul	
+64	ひとだま祭り・幻	Fête spectrale : Illusion	Spirit Illusion	Esprit trompé	wiki FR+EN	
+65	ひとだま祭り・影	Fête spectrale : Ombre	Spirit Daze	Esprit confus	wiki FR+EN	
+66	ほうろう世界	Monde errant	Wandering World	Remue-monde	wiki FR+EN	
+67	ひとだまもどき	Feu follet factice				
+68	ゆきんこシャーベット	Sorbet des neiges	Snow Sherbet	Giboulée glacée	wiki FR+EN	
+69	悪ふざけソルベ	Sorbet farceur	Prank Sorbet		EN seul	
+70	キラキラ雪化粧	Poudroiement scintillant	Shiny Snowdrifts	Congère luisante	wiki FR+EN	
+71	ときめき☆百鬼夜行	Défilé féerique des cent démons	☆Shiny Chaos	☆Chaos éclatant	wiki FR+EN	
+72	紅蓮地獄	Brasier infernal	Inferno	Inferno	wiki FR+EN	
+73	氷結地獄	Enfer glacial	Arctic Abyss	Abîme arctique	wiki FR+EN	
+74	オワリノハジマリ	Le début de la fin	Alpha Omega	Alpha Oméga	wiki FR+EN	
+75	ぶっとび頭突き	Coup de boule foudroyant	Headbutt HEY-O!	Tête la première	wiki FR+EN	
+76	かっとびバスター	Buster propulsé				
+77	ゴリおしストレート	Direct en force	Gorilla Straight	Crochet du gorille	wiki FR+EN	
+78	イガイガおとし	Chute épineuse	Koff Dropper	Picoti Picota	wiki FR+EN	
+79	チクチクボム	Bombe piquante	Sting Bomb	Bombe à pic	wiki FR+EN	
+80	シャレオツ☆傘刺し	Piqué d'ombrelle branché ☆	☆Stylish Stab	☆Surin pimpant	wiki FR+EN	
+81	ぬすんだ傘☆ラッシュ	Ruée d'ombrelles volées ☆	☆Brelly Rush		EN seul	
+82	ハイカラ☆パラソル	Ombrelle rétro ☆	☆Prism Parasol	☆Belle Ombrelle	wiki FR+EN	
+83	おしゃんちっく☆雨	Pluie ultra-chic ☆	☆Radiant Rain	☆Pluie Diluvienne	wiki FR+EN	
+84	がっちりガード	Garde impénétrable	No Way Through	Cul-de-sac	wiki FR+EN	
+85	不落のむりだ城	Château imprenable	Insurmountable	Muraille	wiki FR+EN	
+86	石垣おとし	Éboulis de rempart	Stonewall Drop	Perce-muraille	wiki FR+EN	
+87	とおせんブロック	Blocage infranchissable	Barricade Block	Blocus	wiki FR+EN	
+88	くろがねビンタ	Gifle de fer forgé	Iron Cloutain	Gifle de fer	wiki FR+EN	
+89	鋼鉄ヨロイがため	Blindage d'acier	Lock of Steel	Moral d'acier	wiki FR+EN	
+90	ウルトラしこふみ	Piétinement ultra-lourd	Ultra Sumo Stomp	Ultra haka	wiki FR+EN	
+91	夜桜しこふみ	Piétinement des cerisiers nocturnes	Midnight Stomp	Haka du soir	wiki FR+EN	
+92	超力ツノクラッシュ	Choc de corne surpuissant	Super Horn Crash	Corne rageuse	wiki FR+EN	
+93	悪道いっぽんみち	Voie royale du scélérat	Path to Heck		EN seul	
+94	暴走ツノブレイク	Ruée de corne déchaînée	Horn Breaker	Corne-à-corps	wiki FR+EN	
+95	爆裂ツノファイナル	Impact de corne final explosif	Horn Explosion	Corne explosive	wiki FR+EN	
+96	さよなら大金星	Adieu grand champion	Glorious Buh-Bye	Adieu flamboyant	wiki FR+EN	
+97	突撃こっぱみじん	Charge pulvérisatrice	Self Destruct	Autodestruction	wiki FR+EN	
+98	いぶし銀ガード	Garde d'argent patiné	Refined Guard	Garde raffinée	wiki FR+EN	
+99	高級プラチナガード	Garde de platine grand luxe	Platinum Guard	Garde de platine	wiki FR+EN	
+100	しっかく一発退場	Carton rouge direct				
+101	天地崩壊	Cataclysme universel	Total Collapse	Destruction totale	wiki FR+EN	
+102	黒潮ガード	Barrière du courant noir	Tidal Guard		EN seul	
+103	みんみん斬り	Entaille stridente	Cicada Cut	Coupe de cigale	wiki FR+EN	
+104	でまかせ水平斬り	Entaille horizontale improvisée	Pizza Slice		EN seul	
+105	忍法・影走り	Art ninja : Course de l'ombre	Shadow Speed	Vitesse éclair	wiki FR+EN	
+106	忍法・神風おこし	Art ninja : Souffle du vent divin	Wind Run	Vitesse du ninja	wiki FR+EN	
+107	トホホの砲	Canon de la déprime	Boohoo Blast	Flamentation	wiki FR+EN	
+108	ださださスタイル	Style ringard	Awfully Awkward	Bonnet de nuit	wiki FR+EN	
+109	奈落へＧＯ！	Direction les Abîmes !	Meet The Reaper		EN seul	
+110	悪へのいざない	Invitation au mal	Evil Temptation		EN seul	
+111	ひゃくれつ肉球	Pattes de la fureur	Paws of Fury	Fureur du chaton	wiki FR+EN	
+112	汚れちまった肉球	Pattes de la déchéance	Dirty Paws		EN seul	
+113	チクチク肉球	Pattes d'épines	Thorny Thwacks	Piquador	wiki FR+EN	
+114	ツッパリ夜露死苦！	Châtiment voyou !				
+115	ボウギョモードニャン	Mode Défense, nyan	Guard Meowde	Miaude défense	wiki FR+EN	
+116	ゴールデンニャンダー	Goldennyander	Gold Thundpurr	Transmiaoutation	wiki FR+EN	
+117	１００カラット肉球	Pattes 100 carats				
+118	ひんやりブルー肉球	Pattes saphir	Pure-Blue Paws	Saphipattes	wiki FR+EN	
+119	さわやかグリーン肉球	Pattes émeraude	Cutie Paws	Émeraupattes	wiki FR+EN	
+120	じょうねつレッド肉球	Pattes rubis				
+121	つぶつぶオレンジ肉球	Pattes topaze	Glittering Paws	Topapattes	wiki FR+EN	
+122	メガ滝おとし	Chute de la cascade				
+123	みえはり滝落とし	Chute prétentieuse	Great Heights		EN seul	
+124	げきりゅう一閃	Éclair torrentiel	Torrent Slash	Torrentaille	wiki FR+EN	
+125	なみのり一閃	Vague tranchante	Bodacious Slash	Lame de fond	wiki FR+EN	
+126	ちょっかいだし一閃	Frappe taquine	Strobe Attack		EN seul	
+127	ひとだま乱舞	Danse des feux follets	Spirit Dance	Valse des esprits	wiki FR+EN	
+128	風来サンダー	Tonnerre nomade	Wild Zaps	Fulguration	wiki FR+EN	
+129	ひとだまし乱舞	Danse spectralis	Groovy Moves		EN seul	
+130	ひとだまバースト	Explosion de feux follets	Spirit Burst	Rafale d'esprits	wiki FR+EN	
+131	稲妻クレイジー	Éclair fou	Crazy Lightning	Fulminator	wiki FR+EN	
+132	オレオレバースト	Explosion mégalo	Me-First Burst		EN seul	
+133	ボーっとしてました。	J'étais dans la lune.	Spacing Out	Attaque planante	wiki FR+EN	
+134	あのえっとちょっと	Euh, attendez deux secondes	Uh, Er... Hold On.	Tourneboulement	wiki FR+EN	
+135	ぜんぶおれのもの	Tout est à moi	Man of the House		EN seul	
+136	ガリガリつらら	Stalactite de glace	Icicle Crack	Stalacattaque	wiki FR+EN	
+137	ガリガリ大寒波	Grande vague de froid	Subzero	Froid polaire	wiki FR+EN	
+138	熱気ムンムン波	Vague de chaleur torride	Heat Wave	Canicule	wiki FR+EN	
+139	せすじ凍るサギ	Frisson glacial				
+140	もじもじビンタ	Gifle timide	Fidgeting Smack	Nez faste	wiki FR+EN	
+141	ぷるぷるビンタ	Gifle frissonnante	Trembling Smack	Trompe-la-mort	wiki FR+EN	
+142	運命すごろく	Jeu de l'oie du destin	Roll of Fate	Coup du sort	wiki FR+EN	
+143	必中大当たり！	Jackpot imparable !	Hit It Big!	Poids du destin	wiki FR+EN	
+144	うちわ大旋風	Tornade de l'éventail	Typhoon Fan		EN seul	
+145	ほむらタイフーン	Typhon enflammé	Blazing Typhoon		EN seul	
+146	キザったら疾風	Rafale distinguée	Zero Gale		EN seul	
+147	ひもじインパクト	Choc de la faim	Hungry Impact	Choc onigirique	wiki FR+EN	
+148	炊き立てインパクト	Choc du riz chaud	Fresh Impact	En-cas de besoin	wiki FR+EN	
+149	ゲテモノ大放出	Déferlement répugnant	Weirdsplosion		EN seul	
+150	食い意地クレイジー	Gloutonnerie folle	Gleeful Gluttony	Plein la panse	wiki FR+EN	
+151	おっさんかみマックス	Morsure suprême	Creepy Superbite	Grand caninvore	wiki FR+EN	
+152	どこ見てんだコラァ！	Tu r'gardes quoi, toi ?!	Evil Eye		EN seul	
+153	かみマックス・ツイン	Double morsure suprême	Superbite Twin	Double caninvore	wiki FR+EN	
+154	三途の石つぶて	Pierres du Styx	Stygian Slingshot		EN seul	
+155	大笑いのツボ	Rire aux larmes	In Da Funny Bone	Zygordonnance	wiki FR+EN	
+156	人生うなぎ節	Balade de l'anguille	Eel Life	Changuille	wiki FR+EN	
+157	大蛇の毒霧	Brume venimeuse du grand serpent	Venoconda	Veninconda	wiki FR+EN	
+158	口だけおべっか	Flagornerie de façade				
+159	絶好調ヘブン	Paradis de la gloire	Energy Heaven	Brise revigorante	wiki FR+EN	
+160	絶交オーラ	Aura de rupture				
+161	火事場の馬鹿力	Force désespérée	Forged in Fire		EN seul	
+162	サイコ～フィーバー	Fièvre du bonheur	Bestacular	Remise en forme	wiki FR+EN	
+163	アゲアゲミラクル	Miracle exaltant	Party Miracle	Remède miracle	wiki FR+EN	
+164	名物ワカメ音頭	Danse de l'algue	Wiggling Wave	Air entraînant	wiki FR+EN	
+165	コンブ・デ・マンボ	Mambo du varech	Mambo Madness	Sublime samba	wiki FR+EN	
+166	情熱メカブサンバ！	Samba passionnée de l'algue !	Seaweed Samba	Salsa vivifiante	wiki FR+EN	
+167	そろり足ステップ	Pas de loup	Walk Softly		EN seul	
+168	ハートにキュン！	Cœur palpitant !	Heartstring Tug	Corde sensible	wiki FR+EN	
+169	ブリっこポーズだよ！	Pose trop mignonne !	Youthful Trickery		EN seul	
+170	ズキュキュン・ラブ	Amour fou	Heartmelt Love	Mon petit cœur	wiki FR+EN	
+171	裏キュン・ラブ	Amour sombre	Twisted Love	Amour vache	wiki FR+EN	
+172	ほのぼのフィールド	Champ de réconfort	Air of Happiness	Ondes jojoviales	wiki FR+EN	
+173	うはうはフィールド	Champ de jubilation	Fun Field	Aura hourra	wiki FR+EN	
+174	うひゃひゃゾーン	Zone d'hilarité	Zany Zone	Douce folie	wiki FR+EN	
+175	三択プレゼント	Cadeau à trois choix	Pick-a-Present	Amstramgram	wiki FR+EN	
+176	一択プレゼント	Cadeau unique	Get-a-Present	Super hotte	wiki FR+EN	
+177	盗品大セール	Grande braderie de recel	Jail-Yard Sale		EN seul	
+178	おふくろさんの愛	Amour maternel	A Mother's Love	Liens familiaux	wiki FR+EN	
+179	ポカポカばーちゃん	Mamie réconfort	Loving Auntie	Gentille tata	wiki FR+EN	
+180	おやじの雷ロック	Rock tonitruant de papa	A Father's Scorn	Dispute familiale	wiki FR+EN	
+181	超絶ちゃぶ台返し	Renversement de table ultime	Table Flip	Retourne-table	wiki FR+EN	
+182	ストレス大放電	Décharge de stress				
+183	肩たたき拳	Poing masseur d'épaules	Shoulder Crunch	Écras'épaule	wiki FR+EN	
+184	四十肩がため	Prise de la périarthrite	Shoulder Lock	Clé de bras	wiki FR+EN	
+185	腰痛バスター	Chasseur de lumbago	Backache Buster	Plein le dos	wiki FR+EN	
+186	ネガティブ菌	Bactérie négative	Negativity Germs	Pessimicrobes	wiki FR+EN	
+187	てぐせウイルス	Virus cleptomane	Maniacal Klepto		EN seul	
+188	ジャネガウェーブ	Onde de mauvaises ondes	Think Evil	Pense à mal	wiki FR+EN	
+189	かゆかゆ地獄	Enfer des démangeaisons	Itchocalypse	Grattocalypse	wiki FR+EN	
+190	鬼さんこちら	Par ici les Oni				
+191	特別ごひいきハンド	Main du favoritisme				
+192	命よこど～り	Vol de vie	Life Snag	Pique-vie	wiki FR+EN	
+193	へんな顔プレス	Presse grimace				
+194	ぺちゃくちゃマウス	Babillage incessant	Bigmouth	À pleines dents	wiki FR+EN	
+195	がみがみマウス	Râlerie aiguë	Badger Bite	Critique mordante	wiki FR+EN	
+196	つっぱりメンチ	Regard de voyou	Stare Down	Gros dur	wiki FR+EN	
+197	優柔不断メンチ	Regard d'indécision	Matter Mincer		EN seul	
+198	極道にらみ	Regard menaçant de bandit	Gangster Glare	Air de gangster	wiki FR+EN	
+199	地獄のケツバット	Coup de batte infernal	Brutal Butt Bat	Batte de brute	wiki FR+EN	
+200	魔ガサスショック	Choc de Nimpégase	Negasus Curse	Choc nimprévu	wiki FR+EN	
+201	ダークホース	Cheval noir	Dark Horse	Étalon noir	wiki FR+EN	
+202	通りすがりショック	Choc du passant				
+203	おそろシワシワ	Rides terrifiantes	Scary Wrinkles	Terribles rides	wiki FR+EN	
+204	いわくつきドレイン	Drain hanté	Make it Drain		EN seul	
+205	美美美ビーム	Rayon de beauté pure	Beauty Beam	Rayon de beauté	wiki FR+EN	
+206	不死不死ドレイン	Drain d'immortalité	Undying Drain		EN seul	
+207	グッバイ青春時代	Adieu jeunesse	Midlife Crisis		EN seul	
+208	ぷーすかスモッグ	Smog du prout	Stinky Smog	Vent mauvais	wiki FR+EN	
+209	おならハザード	Risque de flatulence	Toxic Gas	Gaz toxique	wiki FR+EN	
+210	恐怖のすべり芸	Bide terrifiant	Lamest Joke	Blague pourrie	wiki FR+EN	
+211	わらえま千年	Pas drôle pour mille ans	Millennium of Lame	Bide du siècle	wiki FR+EN	
+212	なに様いかさま～	Qui êtes-vous donc, tricheur ~	Mystery Trickery		EN seul	
+213	今夜もねむれナイト	Nuit d'insomnie				
+214	ねむねむドリーム	Rêve ensommeillé	Unwaking Dream		EN seul	
+215	憐みのまなざし	Regard de pitié	Glowing Gazes		EN seul	
+216	ジミーな一発	Frappe discrète	Did You See Me?	Tu m'as vu ?	wiki FR+EN	
+217	カゲローの舞	Danse du mirage	Hazy Dance	Danse furtive	wiki FR+EN	
+218	こっそり一撃の舞	Danse du coup furtif	Secrecy	Invisibilité	wiki FR+EN	
+219	じめりんシャワー	Douche humide	Drizzling Shower	Déluge	wiki FR+EN	
+220	つめたい吐息	Souffle glacial	Shivering Sigh	Frisson de glace	wiki FR+EN	
+221	鼻血ボンバー	Bombe de saignement de nez	Nosebleed Bomb	Bourre-pif	wiki FR+EN	
+222	雨雨スコール	Grain pluvieux	Heavy Squall	Trombes célestes	wiki FR+EN	
+223	あられ流星弾	Pluie de météores de grêle				
+224	ドンヨリ砲	Canon morose	Dismartillery	Sinistrose	wiki FR+EN	
+225	うらめしハンド	Main rancunière	Envious Hand	Main envieuse	wiki FR+EN	
+226	奥義・つまみ神拳	Art secret : Pincement divin	Grub Stealer	Pique-assiette	wiki FR+EN	
+227	ヒキこもり歌	Chant du reclus	Hidabat Harmony	Chauv'complainte	wiki FR+EN	
+228	トジこもりバラード	Ballade de l'isolement	Abodaballad	Chauv'complainte	wiki FR+EN	
+229	ヤドこもりブルース	Blues du casanier	Belfree Blues	Blues du départ	wiki FR+EN	
+230	アレコレちょーだいん！	Donne-moi tout ça !	I Want It All!	Razzia	wiki FR+EN	
+231	おきらくヒーロー参上	Entrée du héros décontracté	Carefree Hero	Razzia	wiki FR+EN	
+232	ぜーんぶイタダキ！	Je prends tout !	The Works		EN seul	
+233	ネクラ木枯らし	Vent glacial morose	Gloomy Storm	Ouragan lugubre	wiki FR+EN	
+234	黄泉嵐	Tempête des Enfers	Demonic Storm	Tornade infernale	wiki FR+EN	
+235	ページめくり旋風	Tourbillon de pages				
+236	うたがいアイズ	Yeux du doute	Suspicious Eyes	Œil suspicieux	wiki FR+EN	
+237	ガキンチョの乱	Révolte des gamins	Temper Tantrum	Crise de nerfs	wiki FR+EN	
+238	ひねくれガス	Gaz retors	Contrary Gas	Vent contraire	wiki FR+EN	
+239	ビビリバビデブー	Bibbidi-bobbidi-trouille	Timid Boo	Abracadabrak	wiki FR+EN	
+240	粘着質いびり	Harcèlement visqueux				
+241	デビラカダブラ	Dévilacadabra	Boldakazam	Vil sortilège	wiki FR+EN	
+242	漆黒ミュータンス	Mutagène d'ébène	Bacteria Barrage	Abracaries	wiki FR+EN	
+243	ドケチの呪い	Malédiction de l'avare	Stingy Curse	Sinistre avarice	wiki FR+EN	
+244	常闇の呪い	Malédiction des ténèbres éternelles	Pitch-Black Curse	Noirsort	wiki FR+EN	
+245	心も体ものぞきます	J'examine votre corps et votre cœur	Deep Look		EN seul	
+246	ツチノコスマイル	Sourire de Noko	Noko Smile	Sourire de Noko	wiki FR+EN	identique
+247	にっこりパンダ	Panda radieux	Panda Smile	Sourire de panda	wiki FR+EN	
+248	モノマネつくり笑い	Rire forcé d'imitateur				
+249	福福スマイル	Sourire de bonne fortune	Lucky Smile	Sourire fétiche	wiki FR+EN	
+250	りゅーくんストーン	Pierre de Dracounet	Draggie Stone	Cristal sismique	wiki FR+EN	
+251	モラルぶれいく	Rupture morale	Cheat Code		EN seul	
+252	龍神ロック	Rugissement du Dieu Dragon	Dragon Rock	Rocher dragon	wiki FR+EN	
+253	水神の大滝	Grande cascade du Dieu de l'Eau	Dragon Falls	Averse du dragon	wiki FR+EN	
+254	いやいやチャージ	Charge à contrecœur	Hateful Charge	Charge odieuse	wiki FR+EN	
+255	うらみアタック	Attaque rancunière	Vengeance	Vengeance	wiki FR+EN	
+256	逆上地獄	Enfer de la démence	Frenzied Rage	Folie furieuse	wiki FR+EN	
+257	さめはだガード	Peau de requin protectrice	Sharkskin Shield	Peau de requin	wiki FR+EN	
+258	むさぼりシャーク	Requin vorace	Feeding Frenzy	Voracité forcenée	wiki FR+EN	
+259	うそも方便ガード	Mensonge pieux protecteur	Little White Lie		EN seul	
+260	がまぐちブレイカー	Brise-porte-monnaie	Bank Breaker	Casse du siècle	wiki FR+EN	
+261	借金地獄絵図	Tableau infernal de l'endettement	Eternal Debt	Dette éternelle	wiki FR+EN	
+262	かつあげパラダイス	Paradis du racket	Shake It Up		EN seul	
+263	ナガバナショック	Choc de Jacquasseur	Babbleblast	Pif Paf	wiki FR+EN	
+264	たたき売りパンチ	Poing de la braderie	Banana Splat	Banane Splash	wiki FR+EN	
+265	しきるんじゃ！	C'est moi qui commande !	I'll Take the Lead!	C'est moi le chef !	wiki FR+EN	
+266	うっちゃり毒牙	Croc venimeux au bord du gouffre	Venomous Feint	Vague de venin	wiki FR+EN	
+267	すねすねソウル	Âme boudeuse	Sulky Soul	Âme amère	wiki FR+EN	
+268	あらぶるんじゃ！	Déchaînement furieux !	Going Wild		EN seul	
+269	やまたのおろち	Dragon à huit têtes	Octo Snake	Octoreptile	wiki FR+EN	
+270	影流やまたのおろち	Dragon de l'ombre à huit têtes	Shadow Dragon	Dragombre	wiki FR+EN	
+271	閃光ドラゴンラッシュ	Assaut du dragon étincelant	Dragon Flash	Cou du dragon	wiki FR+EN	
+272	かつおブシ斬り	Tranche Bonite	Bonito Blade	Chatana	wiki FR+EN	
+273	しゅらシュシュシュ	Chouchouchoura	Shura Shower	Shurafale de feu	wiki FR+EN	
+274	イケメン様のほほえみ	Sourire de Dandiche	Handsome Grin	Sourire de star	wiki FR+EN	
+275	満開サクラサク	Cerisier en fleur	Full Bloom	Floraison	wiki FR+EN	
+276	伝説の金棒	Massue légendaire	Golden Beatdown	Dérouillée en or	wiki FR+EN	
+277	刀はまだ早い拳！	Poing sans sabre !				
+278	おかたづけの陣	Grand ménage	Cleaning Circle		EN seul	
+279	激おこプンプン斬り	Tranche-colère	Angry Crosscut		EN seul	
+280	鬼斬り一閃	Éclair fendeur d'ogres	Onigiri Slash		EN seul	
+281	べろりんぺろんちょ	Léchouille baveuse	Lickety-Lick	Coup de langue	wiki FR+EN	
+282	やつあたりぺろんちょ	Léchouille rancunière				
+283	ど根性ストレート肉球	Poing de patounes d'acier	Gutsy Cross Paw	Aplanissement	wiki FR+EN	
+284	田を返せ～田を返せ～	Rends ma rizièèère !	Dirty Trick	Bouhc émissaire	wiki FR+EN	
+285	超炭酸しゅわしゅわ～	Bulles ultra-pétillantes				
+286	ビクトリアーーーン！	Victorieuuux !				
+287	ピカピカ除菌の術	Purge désinfectante	Spray Care		EN seul	
+288	開眼・獅子抜刀	Éveil : Sabre du lion	Lion Blade		EN seul	
+289	焼き鬼斬り	Boulette grillée	Toasted Slash		EN seul	
+290	まるのみ	Tout rond	Open Wide		EN seul	
+291	お命いただきます	Votre vie m'appartient	Ill Appetite	Faim sans fin	wiki FR+EN	
+292	ブワっと北風	Rafale du pôle	North Wind	Vent du Nord	wiki FR+EN	
+293	つむじ風ひゅるるん	Tourbillon froufroutant	Cloud Control	Héca-trombe	wiki FR+EN	
+294	きこえま旋風	Tornade assourdissante				
+295	その場しのぎの術	Art de l'esquive				
+296	守護神のマネ	Mimique divine	Imitate Guardian	Mimartyr	wiki FR+EN	
+297	宇宙最強ビーム（嘘）	Rayon suprême (bidon)				
+298	記憶にございません！	Trou de mémoire !	Forget about It	Miamnésie	wiki FR+EN	
+299	めくれるトルネード	Tornade retroussante	Upward Tornado	Tornadine	wiki FR+EN	
+300	ケチつけタイフーン	Typhon critiqueur	Detailspin		EN seul	
+301	命のアツアツおでん	Oden brûlant de vie	Stirring Broth	Coup de bol	wiki FR+EN	
+302	土下座ｄｅドミノ	Domino de prosternation				
+303	あわせ鏡のむこうがわ	L'autre côté du miroir	Mirror Mirror	Esprit miroir	wiki FR+EN	
+304	雷電落とし	Coup de tonnerre	Shock Tactic	Électrochoc	wiki FR+EN	
+305	風魔ライデン	Fûma foudroyant	Thunderstruck		EN seul	
+306	縄文ハートブレイク	Brise-cœur préhistorique	Cracked Pot	Un pot fêlé	wiki FR+EN	
+307	突撃となりのうらや飯	Assaut du festin jaloux	Bowl Buster	Manque de bol	wiki FR+EN	
+308	ギトギトウォール	Mur de graisse	Sweaty Wall	Défensueur	wiki FR+EN	
+309	天罰の一突き	Châtiment céleste	Zattack	Détonnerre	wiki FR+EN	
+310	あっちこっち珍道中	Pérégrination loufoque	You've Lost Me	À l'ouest	wiki FR+EN	
+311	元気ドロボー	Voleur de tonus	Life Looter	Pillage vital	wiki FR+EN	
+312	極太海老天落とし	Chute de tempura géante	Prawn Punch	À poing	wiki FR+EN	
+313	あっちむいて砲	Canon tête en l'air				
+314	トドメの百光線	Tourbillon de maquereau grillé	Centur-Eye Stare	Rayeunnement	wiki FR+EN	
+315	胸きゅん★キラー光線	Un, deux, trois, soleil !	Dazzling Glare	Regard lumineux	wiki FR+EN	
+316	おさわがしアイビーム	Pas du chaton égaré	Laser Eyes		EN seul	
+317	今夜もお肉パーリー	Spirale spectrale	Proteam	Fringance	wiki FR+EN	
+318	どんがらがっしゃん！	Patatras !				
+319	忍耐バカの壁	Festin d'âmes	Patience Wall	Mur défensif	wiki FR+EN	
+320	大ガマ変化の術	Sable noir maudit	Warts and All	Amphibeigne	wiki FR+EN	
+321	秘術・化けやもり	Marionnette de tristesse	Geck Out	Lézards martiaux	wiki FR+EN	
+322	ザ・無表情	Paradis du rab de riz	Blank Face	Charge neutre	wiki FR+EN	
+323	おたふくわ～るど	Bombe du cauchemar	Winning Ugly		EN seul	
+324	まやかしの瞳	Miracle de l'amour	Eyelusion	Plein la vue	wiki FR+EN	
+325	ふかづめになーれっ	Récupération d'amour	Cut to the Quick!		EN seul	
+326	美脚でうっふん	Danse de l'invincible guerrier	Shake a Leg	Stimollet	wiki FR+EN	
+327	爆裂スタートダッシュ	Deuxième roulement de tambour	Flying Start	Sprint	wiki FR+EN	
+328	私の恋は雨模様	Repas royal, merci !	Drenched	Inondation	wiki FR+EN	
+329	顔面お色直し	Sumo tout en puissance	Change Face	Volte-face	wiki FR+EN	
+330	ねんねんコロリガス	Posture du fier combattant	Sleepy Gas	Somnifère	wiki FR+EN	
+331	カッパッ波ー！	Danse de prospérité	Mega Wave	Aquattaque	wiki FR+EN	
+332	大河の暴れ水	Danse de bonne fortune	Raging River	Furivière	wiki FR+EN	
+333	にぎりっぺ水流	Danse des moissons abondantes	Tidal Force		EN seul	
+334	無限のホースパワー	Tambour de l'ogre enragé				
+335	なめときゃ治りんこ	Posture de diamant	Lick of Love	Langue d'amour	wiki FR+EN	
+336	カラカラからっ風	Confection de boulettes ultimes	Umbrella Gust	Parafale	wiki FR+EN	
+337	お肌ガサガサ陣風	Filet ravageur	Brelly Blast		EN seul	
+338	砂夫の素直な砂	Éruption volcanique !	Sandslide	Ensablement	wiki FR+EN	
+339	どんちゃんさわぎ！	Déflagration enflammée !	Rockin' Rockets	Transe	wiki FR+EN	
+340	いやしの吉兆	Fureur des papattes	Soothing Fortune	Bonne passe	wiki FR+EN	
+341	くだらないジョーク	Lancer magique foudroyant, nyan	Joke on It		EN seul	
+342	無邪気ワールド	Papattes victorieuses	Innocent World	Tranche de rire	wiki FR+EN	
+343	微笑みのあらし	Rafale de coups d'estoc	Gleeful as a Gale		EN seul	
+344	晴れ晴れファイヤー	Tornade de mille coups d'estoc	Solar Flare	Coup de chaud	wiki FR+EN	
+345	魅惑の海藻カーニバル	Dévastation piquante	Seaweed Carnival	Carnavalgue	wiki FR+EN	
+346	ナメナメ集中治療	Papattes invincibles	Lick of Life	Langue de vie	wiki FR+EN	
+347	大山砂夫と申します。	I'll be dog	Sand Stormal	Tempête de sable	wiki FR+EN	
+348	から傘バリケード	Missile d'acier trempé	Umbrellicade	Pébloque	wiki FR+EN	
+349	五穀豊穣の舞	Rayon doré Golnyan	Joyful Jig	Gigue	wiki FR+EN	
+350	なけなしのコバンダー	Papattes 100 carats	Empty Pockets	Mitraille	wiki FR+EN	
+351	猪突モー進撃！	Éclat du saphir	Bullrush	Matamor	wiki FR+EN	
+352	天下泰平の響き	Miracle de l'émeraude				
+353	一本イットク？	Passion du rubis	Horn of Plenty	Dop-corne	wiki FR+EN	
+354	アイム　ゾーリー	Chance de la topaze	Sole Quaker	Vatonguerre	wiki FR+EN	
+355	あんまりばかに砂！	Mégavague de surf	Blistering Idiot		EN seul	
+356	オールナイトゲーム	Écrasement de planche géante	Worn Out		EN seul	
+357	元気かりパックン	Onde purificatrice	Energetic Gulp	Mutuelle santé	wiki FR+EN	
+358	妖怪失格	Frappe aquatique légendaire	Sap	Attact	wiki FR+EN	
+359	せっかちパンチ	Torrent boueux	Abrupt Punch	Poing final	wiki FR+EN	
+360	らくらく長寿の術	Torrent légendaire	Borrowed Health	Vie volée	wiki FR+EN	
+361	勝手に変えチャンネル	Attaque de la vague tropicale	Channel Changer	Télécommando	wiki FR+EN	
+362	モーレツ三又撃	Trident furieux	Triple Trouble	Triple peine	wiki FR+EN	
+363	理不尽すぎるビンタ	Morsure à 5 millions de nyans	How Dare You!	Soufflet	wiki FR+EN	
+364	とことん吸血	Papattes suprêmes	Big Bloodsucker		EN seul	
+365	終わらない１５の夜	Bénédiction de la nature	Tuckered Out		EN seul	
+366	まっくろどんどろん	Terreur ténébreuse	Pitch Bomber	Coup de poix	wiki FR+EN	
+367	ファサファサ厄払い	Grand encouragement passionné	Fluffy Dispel	Rebrousse-poils	wiki FR+EN	
+368	永遠なるねぐせ	Virée folle de l'amour				
+369	鼻毛でてナーイヨー	Rafale de cent bâillements	Ah Ah Ah~	Ha ha ha	wiki FR+EN	
+370	アッパレ自画自賛の舞	Distraction cosmique	Boastful Dance	M'as-tu-vu	wiki FR+EN	
+371	もう呪っちゃう！	Malédiction suprême !				
+372	くねくね踊り	Danse ondulante	Squirm	Tortillon	wiki FR+EN	
+373	ぶんぶんカウボーイ	Lasso virevoltant	Ropin' Robbin'	Lassocisse	wiki FR+EN	
+374	ビバ！ゆであがり	Viva la cuisson vapeur !	Squealing Boil	Cochon bouilli	wiki FR+EN	
+375	パラリラ大爆走	Rodéo pétaradant	Loud and Proud	Bombe de basses	wiki FR+EN	
+376	ふさふさの世界へ…	Vers un monde soyeux...	Bushy World	Mauvais poil	wiki FR+EN	
+377	むだな犠牲ボンバー	Bombe du sacrifice inutile	Lemming Attack		EN seul	
+378	呪いのラブレター	Lettre d'amour maudite	Cursed Love	Amour maudit	wiki FR+EN	
+379	土蜘蛛・土遁の術	Technique de terre d'Arachnus	Spider Smash	Arachaille	wiki FR+EN	
+380	桃色ドトンドトーン	Rose fracassant	Spider Crash	Omnipattence	wiki FR+EN	
+381	ケマモト特産パンチ	Technique de terre de Tornarachna	Bear Knuckle	Grosse légume	wiki FR+EN	
+382	ねちがえ朝シャワー	Toile infernale pourpre et noire	Morning Shower	Bonne douche	wiki FR+EN	
+383	からまれゾーン	Foudre colossale	Tossabout	Chicane	wiki FR+EN	
+384	音漏れロックフェス	Voix hyperpuissante	Maruckus	Maracasserole	wiki FR+EN	
+385	悪霊スッポンぽん！	Veux-tu devenir mon vassal ?	Sucksorcism	Débouche trouble	wiki FR+EN	
+386	どっこい大漁節	Chant de la bonne pêche	A Fisherman's Life	Prise légendaire	wiki FR+EN	
+387	ムカムカ尻尾ッポ！	Danse enflammée				
+388	渚のハイカラウェーブ	Grand sabre foudroyant	Beach Wave	Déferlante	wiki FR+EN	
+389	お前もろうにんぎょう	Feu de la victoire	Malmaidened		EN seul	
+390	のびのびごっつんこ	Danse d'innocence pure	Twist 'n' Tangle	Cou tordu	wiki FR+EN	
+391	ぐるぐるヘッドバット	Danse de paix universelle	Spinning Headbutt		EN seul	
+392	とりあえずブレス	Tataki de bonite suprême !	Aaand release	Expire du pire	wiki FR+EN	
+393	ドラゴン激一発！	Danse de l'ivresse suprême	Flaming Tail	Pince-moi	via EN	
+394	トラウマバキューマー	Gourde démoniaque enivrante	Vacuucism	Edsorcisme	wiki FR+EN	
+395	チョベリバスター	Grande rotation sans égale	Whining Wail	Lamentourloupe	wiki FR+EN	
+396	海神の大波	Cataclysme terrestre	Tidal Wave	Rouleau	wiki FR+EN	
+397	誕生ビッグウェーブ	Pluie de prospérité	Big Wave	Marée	wiki FR+EN	
+398	猫色吐息でばっふぅん	Souffle félin bafou	Nose Blows		EN seul	
+399	ネタバレフィナーレ	Souffle super-brûlant	Finale Spoiler	Grand déballet	wiki FR+EN	
+400	うんざりうんちく地獄	Océan de lumière dorée	Pooped Out	Assomité	wiki FR+EN	
+401	やまタン８枚タン！	Blizzard de l'extrême				
+402	必殺技なし	Pas d'ombre infernaux				
+403	厄介な呪い	Danse de la nuit obscure	Unfairy Kraft	Sornoiserie	wiki FR+EN	
+404	不快なキッス	Coup fatal en angle mort	Unkaind Kiss	Charme naturel	wiki FR+EN	
+405	豪快な守り	Invitation vers les ténèbres	Untidy Keeper	Cœur de cible	wiki FR+EN	
+406	難解な呪文	Danse du paradis terrestre	Unpleasant Kurse	Maudit chaos	wiki FR+EN	
+407	破壊の一撃	Danse du cauchemar éternel	Unkeen Krack	Poing d'orgue	wiki FR+EN	
+408	自己中ウザイでチュー	Souffle du zéro absolu	Me, Me, Me	Moi moi moi	wiki FR+EN	
+409	アペーリキャーン！	Brume de poison violent	Yes We Pelican!	Yes We Pelican !	wiki FR+EN	
+410	ダークニャイトクロー	Frappe broyeuse de platine	Night Claw	Coup de grisou	wiki FR+EN	
+411	百万倍返し肉球	Farces aux mille métamorphoses	Flurry of Furry	Fureur du valet	wiki FR+EN	
+412	完璧なおもてなし	Lumière chassant les démons	Bon Appétit	Service soigné	wiki FR+EN	
+413	アイルビー自バーック	Souffle de la création universelle	Farewell Blast	Adieux explosifs	wiki FR+EN	
+414	ゴーゴー☆ラブニャン	Séisme de transe totale	Lovely Meow	Morphéline	wiki FR+EN	
+415	タイガークロスニャン	Lance divine fulgurante	Tiger Meow	Miaous costaud	wiki FR+EN	
+416	ニャンげーひとだま	Épée divine tranche-tout	Swirly Nyanball	Punisson	wiki FR+EN	
+417	大空ジェット肉球	Arc divin du destin	Paws of Flying	Fulguropattes	wiki FR+EN	
+418	ニャッサーソード	Hache divine aguerrie	Vagabond Blade	Épérégrination	wiki FR+EN	
+419	ほじほじほ～じほじ	Griffes divines déchaînées	Icky Picky	Dégoûte au nez	wiki FR+EN	
+420	ファイナルガッツ！	Marteau divin intrépide	Mighty Moxie		EN seul	
+421	青春ガッツ！	Fouet divin dévastateur	Mega Moxie		EN seul	
+422	怒りの金棒	Massue de la colère	Iron Anger	Poigne de fer	wiki FR+EN	
+423	冷徹の金棒	Massue glaciale	Iron Frost	Main de fer	wiki FR+EN	
+424	悪夢の金棒	Massue du cauchemar	Nightmare Beat	Cauchematraque	wiki FR+EN	
+425	ギスギス好かーん！	Bouclier divin majestueux	Awkward Silence	Silence gênant	wiki FR+EN	
+426	ギスギスハハハーン！	Anneau divin étincelant	Awkward Moment!	Moment gênant	wiki FR+EN	
+427	ブーブーグゥ	Armure divine sans faille	Snooze Bruiser		EN seul	
+428	ねぶたでらっせ～ら～	Éventail divin insaisissable	Hog Wild	Lard d'assaut	wiki FR+EN	
+429	こちとらパンダでぃ！	Stratégie Fûrinkazan				
+430	白黒つけるぜぃ！	Danse des cent fleurs				
+431	みなぎるウナギール	Plan divinement inspiré	Eelergetic		EN seul	
+432	ひまつぶし斬り	Assaut féroce sans égal	Bored Slice		EN seul	
+433	くいだおれ突き	Formation des héros d'exception	Octopick	Poulpique	wiki FR+EN	
+434	やっぱ突っきゃねん	Charge audacieuse et résolue	Octopoke	Poulperce	wiki FR+EN	
+435	砂サンキュー	Ordre héroïque et fringant	Thand You	Tectorpille	wiki FR+EN	
+436	もう砂ノーサンキュー	Garde calme et imperturbable	No Thand You	Dunami	wiki FR+EN	
+437	ごっつぁんで素うどん	Cœur pur comme l'eau dormante				
+438	千秋楽うどん拳	Avancée majestueuse et fière				
+439	あっそ！	Charge vaillante et intrépide	Oh!	Attactonique	wiki FR+EN	
+440	あっそうだ！	Stratégie de sagesse et de bravoure	Gleeruption	Magmassacre	wiki FR+EN	
+441	いやしウキウキ	Stratagème à longue portée	Make You Happy	Bel cannto	wiki FR+EN	
+442	ほっこりトキメキ	Coup de la persévérance amère	Starry Bright		EN seul	
+443	ガッパーブレード	Esprit indomptable	Kappa Cutter	Skalppel	wiki FR+EN	
+444	モンゲービームズラ	Prouesse du guerrier d'élite	Koma Kannon	Rayon koma	wiki FR+EN	
+445	メシハマダカノン砲	Assaut fulgurant comme l'éclair	Eat This!	Mange !	wiki FR+EN	
+446	自爆でスイマ千円	Bravoure inégalée	Pooch a' Splode	Vie de chien	wiki FR+EN	
+447	ギギギスマイル	Arc divin d'une précision absolue	Soothing Smile	Sourire béat	wiki FR+EN	
+448	ドラゴニックバーン	Rugissement d'une ardeur dévorante	Dragonic Burn	Infracou	wiki FR+EN	
+449	メロメロ肉球	Regard perçant aux mille lieues	Melon Masher	Mélondrame	wiki FR+EN	
+450	もぎたてビタニャンＣ	Percée tous azimuts	Vitameow C	Vitamiaoune	wiki FR+EN	
+451	うぶ毛バリヤー	Frappe éclair fulgurante	Stubble Barrier	Poilissade	wiki FR+EN	
+452	つぶぞろいバディ	Attaque surprise insaisissable	Grape Buddies	Déraisin	wiki FR+EN	
+453	ベリーファイニャー	Commandement des vétérans	Strawberry Roar	Gagariguette	wiki FR+EN	
+454	ププププ種鉄砲	Intimidation noble et imposante	Seed Nyattack	Pépinade	wiki FR+EN	
+455	口からでまかせブレス	Assaut au péril de sa vie	Blabber Mouth	Pipelette	wiki FR+EN	
+456	極太ＵＳＡビーム	Résolution jusqu'au bout du sacrifice	Bunny Beam	Rayon lapin	wiki FR+EN	
+457	天下布猫	Stratagème de la dernière chance	Cat That Rules the Whole Country		EN seul	
+458	愛情てんこもり	Quitte ou double décisif	Affectionate		EN seul	
+459	ニャクスキャリバー	Piège du coup de filet général	Excalipurr		EN seul	
+460	マジ猫ファイニャー	Plan d'une folle ingéniosité	Infurno		EN seul	
+461	未設定	Non défini				
+473	べろりんぺろんちょ・怪	Prouesse aux multiples facettes				
+474	田を返せ～田を返せ～・怪	Commandement adaptable et réactif				
+475	めくれるトルネード・怪	Occasion en or inespérée				
+476	カッパッ波ー！・怪	Avancée irrésistible				
+477	カラカラからっ風・怪	Tension explosive				
+478	無邪気ワールド・怪	Furie du lion déchaîné				
+479	いやしの吉兆・怪	Garde à l'affût du tigre				
+480	ファサファサ厄払い・怪	Combat féroce du dragon et du tigre				
+481	渚のハイカラウェーブ・怪	Douceur des paysages enchanteurs				
+482	のびのびごっつんこ・怪	Éclair de la sagesse ancienne				

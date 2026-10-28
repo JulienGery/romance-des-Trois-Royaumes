@@ -31,6 +31,7 @@ Si la colonne 7 est vide, le jeu garde le texte japonais.
 ## Fichiers annexes
 
 - `yokai_names_en.tsv` : noms anglais officiels des Yo-kai (Yo-kai Watch Wiki, CC BY-SA), généré par `tools/translation/yokai_names.py`.
+- `skills_fr.tsv` : les 472 compétences du jeu (japonais, FR actuel, EN/FR officiels des wikis Yo-kai Watch, colonne `source`), et `skills_official.tsv` : 1 517 capacités officielles japonais/anglais/français ; générés par `tools/translation/skill_names.py` (API publique des wikis, CC BY-SA).
 - `glossary_en.tsv` : glossaire envoyé à DeepL.
 - `manual_en.json` : corrections anglaises faites à la main, appliquées par-dessus DeepL (`tools/translation/apply_manual.py`).
 
