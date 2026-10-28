@@ -88,13 +88,30 @@ def render_page(name, atlas, font_path, scale):
     return alpha, out, kept, len(meta['glyphs'])
 
 
+def bake_atlas(lang):
+    """Atlas d'une langue (même chaîne que tools/build_all.sh) dans un dossier temporaire ; les pages dépendent du jeu de caractères."""
+    import subprocess, tempfile
+    tools, out = os.path.join(ROOT, 'tools'), tempfile.mkdtemp(prefix=f'atlas_{lang}_')
+    env = dict(os.environ, FR_LANG=lang)
+    extra = subprocess.run([sys.executable, '-I', 'charset_from_translations.py'], cwd=tools, env=env, capture_output=True, text=True, check=True).stdout.strip()
+    dll = 'fontatlas/bin/Debug/net10.0/Level5FontAtlas.dll'
+    for name, cellh in (('sml', 16), ('nrm', 18)):
+        subprocess.run(['dotnet', dll, f'../externals/fonts/ft_{name}.xf', f'{out}/atlas_{name}', '--chars', extra], cwd=tools, check=True, stdout=subprocess.DEVNULL)
+        subprocess.run([sys.executable, '-I', 'bake_french_atlas.py', f'{out}/atlas_{name}', '--name', name, '--cell', '16', '--cellh', str(cellh), '--out', out],
+                       cwd=tools, check=True, stdout=subprocess.DEVNULL)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--font', default='/System/Library/Fonts/Helvetica.ttc')
     ap.add_argument('--scale', type=int, default=4)
     ap.add_argument('--atlas', default=os.path.join(ROOT, 'data/atlas'))
+    ap.add_argument('--bake-lang', default=None, help="langue (ex. en) : régénère l'atlas de cette langue (dotnet + externals/fonts) au lieu de data/atlas")
     ap.add_argument('--out', default=os.path.join(ROOT, 'work/hires_pack'))
     a = ap.parse_args()
+    if a.bake_lang:
+        a.atlas = bake_atlas(a.bake_lang)
     dest = os.path.join(a.out, TITLE_ID)
     os.makedirs(dest, exist_ok=True)
     for name in ('sml', 'nrm'):

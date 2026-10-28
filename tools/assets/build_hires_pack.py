@@ -2,6 +2,7 @@
 """Génère un pack de textures haute résolution pour Azahar (sans toucher à l'archive du jeu).
 
   build_hires_pack.py [--config tools/assets/hires_config.json] [--out work/hires_pack] [--range A:B] [--ids 17779_0,...] [--dry-run]
+  build_hires_pack.py --light ...   (variante allégée pour consoles portables)
   build_hires_pack.py --from-dump ~/Library/Application\\ Support/Azahar/dump/textures/000400000018B000
 Le 2e mode agrandit les PNG dumpés par Azahar sous le même nom (textures fabriquées à l'exécution, dont le hash est imprévisible :
 décors de la carte, par exemple). Les PNG sont stockés retournés verticalement, comme les dumps (`flip_png_files: true`).
@@ -131,6 +132,8 @@ def from_dump(a, cfg):
     items = []
     for f in sorted(os.listdir(a.from_dump)):
         m = re.match(r'tex1_(\d+)x(\d+)_([0-9A-F]+)_(\d+)_mip0\.png$', f)
+        if m and (m[1], m[2], m[4]) == ('512', '256', '0'):                  # images de la vidéo d'intro : jamais (perte du GPU sur Mac)
+            continue
         if not m or min(int(m[1]), int(m[2])) < cfg.get('min_size', 32) or os.path.exists(os.path.join(dest, f.replace('_mip0', ''))):
             continue
         items.append((f.replace('_mip0', ''), os.path.join(a.from_dump, f), cfg.get('dump_scale', cfg['scale']), (int(m[1]), int(m[2]))))
@@ -149,6 +152,7 @@ def main():
     ap.add_argument('--ids', default=None)
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--from-dump', default=None)
+    ap.add_argument('--light', action='store_true', help='ignore les grandes textures à transparence (ETC1A4 >= 256 px) : effets très gourmands sur GPU mobile')
     a = ap.parse_args()
     cfg = json.load(open(a.config))
     if a.from_dump:
@@ -177,7 +181,7 @@ def main():
         for t in g.textures:
             if ids and f'{idx}_{t.index}' not in ids:
                 continue
-            if t.format not in FMT:
+            if t.format not in FMT or (a.light and t.format == 0x48 and min(t.width, t.height) >= 256):
                 skipped += 1; continue
             pf, bpp = FMT[t.format]
             h = cityhash.CityHash64(bytes(t.raw_data[:int(t.width * t.height * bpp)]))
@@ -196,7 +200,7 @@ def main():
                 except Exception:
                     g = None
                 for t in (g.textures if g else []):
-                    if t.format not in FMT:
+                    if t.format not in FMT or (a.light and t.format == 0x48 and min(t.width, t.height) >= 256):
                         continue
                     pf, bpp = FMT[t.format]
                     h = cityhash.CityHash64(bytes(t.raw_data[:int(t.width * t.height * bpp)]))

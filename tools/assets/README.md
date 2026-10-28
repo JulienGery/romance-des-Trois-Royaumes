@@ -72,10 +72,19 @@ Injection manuelle : `apply_textures.py DOSSIER_PNG --dst sortie.BIN`.
 Agrandit les textures **sans toucher à l'archive du jeu** (compatible console réelle) : Azahar remplace à l'affichage toute texture dont le hash correspond
 à un PNG de `load/textures/<TitleID>/`. Il faut activer « Textures personnalisées » dans Azahar.
 
+**En une commande** (pack prêt à publier, ex. GameBanana — rien n'est versionné, il se reconstruit depuis son propre dump ; à relancer quand les textures traduites changent) :
+
+```sh
+tools/assets/make_hires_pack.sh --langs fr            # -> work/hires_pack/YokaiWatchSangokushi-HD-Pack.zip (+ LISEZMOI.txt d'installation)
+tools/assets/make_hires_pack.sh --langs fr,en --light  # variante allégée (AYN Thor) ; --font pour une police libre ; --dry-run pour compter sans lancer Upscayl
+```
+
+Étapes détaillées (le script les enchaîne) :
+
 ```sh
 work/venv/bin/python tools/assets/build_hires_pack.py                       # LINKDATA japonais -> work/hires_pack/000400000018B000/
 work/venv/bin/python tools/assets/build_hires_pack.py --linkdata work/rom/romfs_dir_fr/Data/LINKDATA_A.BIN   # + textures traduites FR
-work/venv/bin/python tools/assets/build_hires_font.py [--atlas data/atlas] [--font ...] # polices FR/EN redessinées (voir plus bas)
+work/venv/bin/python tools/assets/build_hires_font.py [--atlas data/atlas | --bake-lang en] [--font ...]   # polices redessinées (voir plus bas)
 work/venv/bin/python tools/assets/build_hires_pack.py --from-dump <dossier dump d'Azahar>  # textures vraiment fabriquées à l'exécution
 ```
 
