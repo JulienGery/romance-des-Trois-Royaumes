@@ -45,5 +45,9 @@ tools/make_release.sh ORIGINAL.cci sortie en            # patch xdelta YokaiWatc
 
 Les balises du jeu (couleurs, noms de variables) sont protégées et contrôlées une à une ; en cas de perte, le texte est retraduit morceau par morceau. Environ 20 500 textes uniques (≈ 390 000 caractères) : le forfait gratuit de DeepL (500 000 caractères par mois) suffit. La clé d'API reste dans l'environnement, jamais dans le dépôt. Les traductions sont mises en cache (`translations/<langue>/.cache.json`), l'exécution est reprenable. Une relecture humaine reste nécessaire.
 
+## Pack de textures haute résolution (optionnel, Azahar)
+
+`tools/assets/build_hires_pack.py` et `build_hires_font.py` génèrent un pack de textures agrandies (Upscayl, polices FR/EN redessinées en vectoriel) à copier dans `load/textures/` d'Azahar : l'archive du jeu n'est pas modifiée. Méthode, pièges et limites : `tools/assets/README.md` (« Pack HD »).
+
 ## Mentions
 Projet de fan non officiel. *Yo-kai Watch* est une marque de LEVEL-5. Aucune donnée du jeu n'est incluse, **à deux exceptions près** : (1) l'atlas de police pré-construit (`data/atlas/`) contient des glyphes dérivés des polices de Yo-kai Watch 2 (LEVEL-5), fournis pour éviter à chacun d'extraire ces polices ; (2) les TSV de `translations/` contiennent, en colonne « Original Text », le texte japonais du jeu, nécessaire pour retrouver chaque phrase ; à retirer si le détenteur des droits le demande. `tools/fontatlas` est dérivé de [Kuriimu2](https://github.com/FanTranslatorsInternational/Kuriimu2) et reste sous **GPL-3.0** (voir `tools/fontatlas/NOTICE.md` et `LICENSE`). Aucune licence n'a encore été choisie pour le reste du code de ce dépôt.

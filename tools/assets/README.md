@@ -1,6 +1,6 @@
 # Textures (images avec texte dessiné)
 
-Tout est dans `LINKDATA_A.BIN` (13 128 entrées G1T, 15 361 textures, ~4 070 uniques). Formats rencontrés : ETC1A4 (0x48), RGBA4444 (0x3D),
+Tout est dans `LINKDATA_A.BIN` (13 128 entrées G1T, 15 361 textures, ~4 070 uniques — **plus** ~10 900 textures G1T embarquées dans des entrées `binary`, voir « Pack HD » plus bas). Formats rencontrés : ETC1A4 (0x48), RGBA4444 (0x3D),
 RGB565 (0x3B), RGBA8 (0x09), A4 (0x44), ETC1 (0x47) — tous réencodés par `g1t_encode.py` (RGBA4444/565/8/A4 sans perte, ETC1 avec perte légère).
 
 ## Préparer (une fois)
@@ -66,3 +66,52 @@ Injection manuelle : `apply_textures.py DOSSIER_PNG --dst sortie.BIN`.
 - Le texte des noms est le même que dans les scripts : pour les plaques/techniques, le bon libellé FR se retrouve dans `translations/fr/*.tsv`
   (`tools/translation/search.py`). Le rendu doit rentrer dans 256×64 / 128×32 : prévoir des libellés courts ou un texte plus petit.
 - Non testé en jeu (encodeur vérifié par aller-retour décodage ↔ encodage, injection vérifiée dans l'archive).
+
+## Pack de textures haute résolution (Azahar)
+
+Agrandit les textures **sans toucher à l'archive du jeu** (compatible console réelle) : Azahar remplace à l'affichage toute texture dont le hash correspond
+à un PNG de `load/textures/<TitleID>/`. Il faut activer « Textures personnalisées » dans Azahar.
+
+```sh
+work/venv/bin/python tools/assets/build_hires_pack.py                       # LINKDATA japonais -> work/hires_pack/000400000018B000/
+work/venv/bin/python tools/assets/build_hires_pack.py --linkdata work/rom/romfs_dir_fr/Data/LINKDATA_A.BIN   # + textures traduites FR
+work/venv/bin/python tools/assets/build_hires_font.py [--atlas data/atlas] [--font ...] # polices FR/EN redessinées (voir plus bas)
+work/venv/bin/python tools/assets/build_hires_pack.py --from-dump <dossier dump d'Azahar>  # textures vraiment fabriquées à l'exécution
+```
+
+Le dossier produit se copie tel quel dans `load/textures/` d'Azahar (macOS : `~/Library/Application Support/Azahar/`; Android : le dossier d'Azahar). `hires_config.json` : modèle Upscayl
+(`digital-art-4x`, binaire du .app), échelle par défaut (2) et règles par plage d'entrées (`17711-17900`) ou identifiant (`17779_0`) — dernier match gagnant, échelle 1 = ignorer ; `min_size` = plus petit côté traité.
+Les agrandissements viennent d'Upscayl (GPU, ~100 textures/min) puis, si l'échelle < 4, d'une réduction `INTER_AREA`.
+
+### Règles d'Azahar à respecter (toutes vérifiées sur des dumps)
+- Nom : `tex1_<L>x<H>_<HASH16 MAJ>_<format PICA>.png`, L×H = taille **d'origine** de la texture GPU (le PNG peut être plus grand).
+- `pack.json` obligatoire à la racine du dossier du jeu (`skip_mipmap`, `flip_png_files: true`, `use_new_hash: true`), sinon hash « ancien » (pixels décodés) et rien ne correspond. Piège : un dossier copié en double (`<TitleID>/<TitleID>/`).
+- Nouveau hash = **CityHash64 des octets encodés du niveau 0** (`largeur × hauteur × octets/pixel`), python `cityhash`. Les PNG sont stockés **retournés verticalement** (`flip_png_files`), comme les dumps.
+- Formats G1T → PICA : `0x09→0` RGBA8, `0x45→1` RGB8, `0x3C→2` RGB5A1, `0x3B→3` RGB565, `0x3D→4` RGBA4, `0x44→11` A4, `0x47→12` ETC1, `0x48→13` ETC1A4.
+
+### Où sont les textures (à lire avant de dire « introuvable »)
+Une texture dumpée absente du pack **n'est presque jamais** « fabriquée à l'exécution » : elle est dans `LINKDATA_A.BIN` mais pas dans une entrée de type `texture`. Trois endroits :
+1. **Entrées `texture`** (13 128 G1T) : lecture directe (`G1tFile`).
+2. **G1T embarqués dans des entrées `binary`** : ~1 000 entrées (16040–16269, 16394–16659, 18539–18736…) commencent par un compteur (u32) puis contiennent un ou plusieurs fichiers de magie `GT1G`
+   — modèles et textures des yo-kai, atlas de décors de ville (ex. l'atlas 1024×1024 ETC1 de la ville, entrée 16164, herbe comprise). ~10 900 textures, 2 846 hash uniques.
+   Le décalage de début n'est **pas** aligné sur 32 : un scan par fenêtres de 32 octets les rate. Méthode : chercher `GT1G`, lire la taille en `+8`, parser avec `G1tFile`.
+3. **`.bflim` dans des archives SARC** (entrées `archive`/`binary` de magie `SARC`, ex. 17820–17928, 17901, 17986) : décors de la carte. Format CTR BFLIM : données d'abord, pied `FLIM` de 40 octets avec section `imag`
+   (`u16 largeur, u16 hauteur, u16 alignement, u8 format, u8 flags`). Formats BFLIM → PICA : 5→3, 6→1, 7→2, 8→4, 9→0, 0xA→12, 0xB→13 (L8, LA4… non décodés). **Les dimensions GPU sont transposées** :
+   `(pow2(hauteur), pow2(largeur))` (vérifié sur 132 hash).
+Restent vraiment hors de portée : les textures fabriquées à l'exécution (par ex. **les images de la vidéo d'intro**), dont le hash dépend du contenu.
+
+### Pièges rencontrés
+- **Ne jamais mettre les images de vidéo dans le pack.** Les vidéos `.moflex` (OP, ED, LOGO — 22 433 images) sont décodées par le jeu et envoyées image par image dans une texture 512×256 RGBA8 :
+  chaque image a son hash. Des images agrandies en 1024×512 (issues d'un dump) ont fait perdre le GPU à MoltenVK (`OUT_OF_DEVICE_MEMORY` → `DEVICE_LOST`) pendant l'intro sur Mac (M5) ; retirées, plus de souci.
+  Agrandir les vidéos par un pack n'est pas faisable (hash non reproductible via ffmpeg : écart moyen 2,8/255 sur la meilleure image, ~20 Go de PNG) ; réencoder le `.moflex` n'a pas d'encodeur public.
+- **`min_size`** : mettre 8 (et non 32) — 10 231 textures G1T font 16×16 (tuiles de terrain, herbe…).
+- **Performances de la Thor (AYN)** : ~8 000 PNG, 1,8 Go. Des chutes de fps occasionnelles (âmes ultimes, certains combats) sont apparues avec les textures embarquées ; les grandes textures ETC1A4 (alpha, ≥ 256×256, 299 fichiers)
+  agrandies en RGBA brut sont la piste (**non confirmée**) : les retirer du dossier de la console. Les atlas de ville agrandis (2048×2048) sont aussi lourds.
+- Upscayl calcule sur le GPU (`-g -1` pour le CPU est 10 à 50 fois plus lent).
+
+### Polices FR/EN en haute résolution (`build_hires_font.py`)
+La police du jeu n'existe qu'en bitmap 18 px (`ft_nrm.xf`, `ft_sml.xf`) : un agrandissement par IA est flou. Le script **redessine** chaque glyphe à partir d'une police vectorielle (Helvetica du système par défaut ;
+`--font` pour une police libre type Liberation Sans/Arimo avant diffusion) dans la boîte d'encre d'origine (`ox, oy, ink_w, ink_h` de `glyphs_<nom>.json`) : mêmes avances, même mise en page. Page de 256×256 A4 → 1024×1024 (échelle 4).
+Nommage : hash CityHash64 de `a4_encode(page)` (vérifié : identique aux fichiers agrandis par Upscayl pour le FR). Échelle uniforme calée sur la hauteur de capitale du `H` d'origine, ligne de base et centre pris sur l'original ;
+les descendantes (p, q, y, g, j) sont **compressées sous la ligne de base**, jamais décalées (sinon elles ne s'alignent plus). Glyphes absents de la police (♪ ★ ⑯…) : bitmap d'origine agrandi.
+L'atlas anglais a un autre jeu de caractères, donc d'autres hash : `FR_LANG=en` + `charset_from_translations.py`, `dotnet … ft_*.xf --chars`, `bake_french_atlas.py`, puis `--atlas <dossier>` (hash EN non vérifiés sur une ROM anglaise).

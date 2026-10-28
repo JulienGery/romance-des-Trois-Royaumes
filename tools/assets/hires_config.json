@@ -1,0 +1,9 @@
+{
+    "model": "digital-art-4x",
+    "scale": 2,
+    "min_size": 8,
+    "rules": [
+        {"entries": ["2704-2890"], "scale": 4},
+        {"entries": ["17711-17900"], "scale": 2}
+    ]
+}
