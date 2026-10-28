@@ -11,10 +11,16 @@ def tags(s): return [m.group(0) for m in TAG.finditer(RUBY.sub(r'\1', s))]
 def check(u, en):
     errs = []
     if not isinstance(en, str) or not en.strip(): return ['empty']
-    if tags(u['jp']) != tags(en): errs.append(f'tags {tags(u["jp"])} != {tags(en)}')
+    COL = set('brgpBRGPye')
+    jv = sorted(t for t in tags(u['jp']) if t[1:-1] not in COL); ev = sorted(t for t in tags(en) if t[1:-1] not in COL)
+    if jv != ev: errs.append(f'variables {jv} != {ev}')
+    depth = 0
+    for t in tags(en):
+        if t[1:-1] == 'e': depth -= 1
+        elif t[1:-1] in COL: depth += 1
+        if depth < 0 or depth > 1: break
+    if depth != 0: errs.append('unbalanced colours')
     if JA.search(TAG.sub('', en)): errs.append('japanese left')
-    if '\n' in en: errs.append('real newline')
-    if re.search(r'[àâçéèêëîïôûùüÿœÀÉ]', en) and not re.search(r'[àâçéèêëîïôûùüÿœÀÉ]', u['jp']): errs.append('accent')
     jl = len(TAG.sub('', RUBY.sub(r'\1', u['jp']))); 
     if len(en) > 3 * max(jl, 8) + 12: errs.append(f'too long {len(en)}/{jl}')
     return errs

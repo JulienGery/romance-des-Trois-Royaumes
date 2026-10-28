@@ -16,6 +16,8 @@ for f in glob.glob(os.path.join(W, 'out', '*.json')):
 fixed = json.load(open(os.path.join(W, 'fixed.json'), encoding='utf-8'))
 HEADER = re.compile(r'^(<[0-9a-f]{16}>)')
 def tidy(s):
+    import unicodedata
+    s = ''.join(c if ord(c) < 128 or c in '♪♥★☆' else (unicodedata.normalize('NFKD', c)[0]) for c in s)
     s = s.replace('’', "'").replace('“', '"').replace('”', '"').replace('…', '...').replace('\n', '\\n')
     s = re.sub(r' *\\n *', r'\\n', s)
     return re.sub(r'(?<=\S)  +(?=\S)', ' ', s).strip(' ')

@@ -1,6 +1,6 @@
 # Traductions
 
-Un dossier par langue : `fr/` (français, relu), `en/` (anglais, brouillon DeepL à relire). Chaque dossier contient quatre fichiers, un par type de script du jeu :
+Un dossier par langue : `fr/` (français, relu), `en/` (anglais, traduit par workers Haiku avec glossaire officiel et contexte : `tools/translation/en_glossary.py`, `en_prepare.py`, `en_worker_prompt.md`, `en_validate.py`, `en_apply.py`, puis `layout_text.py`). Chaque dossier contient quatre fichiers, un par type de script du jeu :
 
 `Sangokushi-script-Type1.tsv` … `Type4.tsv`
 
