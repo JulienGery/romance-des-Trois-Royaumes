@@ -73,5 +73,8 @@ if __name__ == '__main__':
         if not os.environ.get('YOKAI_NO_ASSETS') and os.path.isdir(tex) and any(f.endswith('.png') for f in os.listdir(tex)):
             sys.path.insert(0, os.path.join(HERE, 'assets')); from apply_textures import texture_items
             ti = texture_items(a, tex); items.update(ti); print(f'{len(ti)} textures retouchées ({tex})')
+        if os.environ.get('YOKAI_MODELS'):                           # modèles 3D plus lisses (opt-in) : tools/models/README, docs/MODELES_3D.md
+            sys.path.insert(0, os.path.join(HERE, 'models')); from improve_models import model_items
+            only = {int(x) for x in os.environ['YOKAI_MODELS_ENTRIES'].split(',')} if os.environ.get('YOKAI_MODELS_ENTRIES') else None; mi = model_items(a, only, levels=int(os.environ['YOKAI_MODELS'])); assert not set(mi) & set(items); items.update(mi); print(f'{len(mi)} modèles 3D améliorés (niveau {os.environ["YOKAI_MODELS"]})')
         n = patch_many(arch_path, dst, items)
         print(f'{n} entries patched ({len(gen)} scripts' + (' + entry 0 font atlas' if 0 in items else '') + f') -> {dst} ({os.path.getsize(dst)/1e6:.1f} MB)')
