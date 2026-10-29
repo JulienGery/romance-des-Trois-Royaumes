@@ -47,7 +47,7 @@ Les balises du jeu (couleurs, noms de variables) sont protégées et contrôlée
 
 ## Pack de textures haute résolution (optionnel, Azahar)
 
-`tools/assets/build_hires_pack.py` et `build_hires_font.py` génèrent un pack de textures agrandies (Upscayl, polices FR/EN redessinées en vectoriel) à copier dans `load/textures/` d'Azahar : l'archive du jeu n'est pas modifiée. Méthode, pièges et limites : `tools/assets/README.md` (« Pack HD »).
+`tools/assets/build_hires_pack.py` et `build_hires_font.py` génèrent un pack de textures agrandies (Upscayl, polices FR/EN redessinées en vectoriel) à copier dans `load/textures/` d'Azahar : l'archive du jeu n'est pas modifiée. Guide d'utilisation : [`PACK_HD.md`](PACK_HD.md) ; méthode, pièges et limites : `tools/assets/README.md` (« Pack HD »).
 
 ## Mentions
 Projet de fan non officiel. *Yo-kai Watch* est une marque de LEVEL-5. Aucune donnée du jeu n'est incluse, **à deux exceptions près** : (1) l'atlas de police pré-construit (`data/atlas/`) contient des glyphes dérivés des polices de Yo-kai Watch 2 (LEVEL-5), fournis pour éviter à chacun d'extraire ces polices ; (2) les TSV de `translations/` contiennent, en colonne « Original Text », le texte japonais du jeu, nécessaire pour retrouver chaque phrase ; à retirer si le détenteur des droits le demande. `tools/fontatlas` est dérivé de [Kuriimu2](https://github.com/FanTranslatorsInternational/Kuriimu2) et reste sous **GPL-3.0** (voir `tools/fontatlas/NOTICE.md` et `LICENSE`). Aucune licence n'a encore été choisie pour le reste du code de ce dépôt.

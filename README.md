@@ -145,6 +145,8 @@ Toute aide est bienvenue, même sans compétences en programmation. Le guide dé
 
 Pour compiler le patch, comprendre le moteur ARM et la police, créer une autre langue ou utiliser le pipeline de traduction (`tools/translation/build_language.sh`), consultez [`docs/TECHNIQUE.md`](docs/TECHNIQUE.md).
 
+Pour produire un pack de textures haute résolution pour Azahar (sans modifier le jeu) : [`docs/PACK_HD.md`](docs/PACK_HD.md).
+
 Pour les spécifications et l'état du projet :
 - [`docs/dev/HANDOVER.md`](docs/dev/HANDOVER.md)
 - [`docs/dev/JOURNAL_MODIFICATIONS.md`](docs/dev/JOURNAL_MODIFICATIONS.md)
