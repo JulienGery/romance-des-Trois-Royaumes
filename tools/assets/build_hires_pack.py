@@ -136,6 +136,7 @@ def from_dump(a, cfg):
             continue
         if not m or min(int(m[1]), int(m[2])) < cfg.get('min_size', 32) or os.path.exists(os.path.join(dest, f.replace('_mip0', ''))):
             continue
+        open(os.path.join(a.out, 'expected.txt'), 'a').write(f.replace('_mip0', '') + '\n')
         items.append((f.replace('_mip0', ''), os.path.join(a.from_dump, f), cfg.get('dump_scale', cfg['scale']), (int(m[1]), int(m[2]))))
     print(f'{len(items)} textures dumpées à agrandir')
     if items and not a.dry_run:
@@ -166,12 +167,16 @@ def main():
     work = os.path.join(a.out, '_work')
     os.makedirs(dest, exist_ok=True)
 
+    expected = open(os.path.join(a.out, 'expected.txt'), 'a')
     jobs, seen, skipped = {}, set(), 0       # modèle -> [(nom final, décodeur () -> (l, h, rgba), échelle, taille d'origine)]
     min_size = cfg.get('min_size', 32)
 
     def add(s, name, h, loader, size):
         nonlocal skipped
-        if s['scale'] <= 1 or min(size) < min_size or h in seen or os.path.exists(os.path.join(dest, name)):
+        if s['scale'] <= 1 or min(size) < min_size:
+            skipped += 1; return
+        expected.write(name + '\n')                  # nom attendu dans le pack (sert à `make_hires_pack.sh --prune`)
+        if h in seen or os.path.exists(os.path.join(dest, name)):
             skipped += 1; return
         seen.add(h)
         jobs.setdefault(s['model'], []).append((name, loader, s['scale'], size))

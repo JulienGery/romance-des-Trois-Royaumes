@@ -119,6 +119,7 @@ def main():
         h = cityhash.CityHash64(a4_encode(alpha, 256, 256))
         fn = f'tex1_256x256_{h:016X}_11.png'
         existed = os.path.exists(os.path.join(dest, fn))
+        open(os.path.join(a.out, 'expected.txt'), 'a').write(fn + '\n')
         rgba = np.zeros(page.size[::-1] + (4,), np.uint8)
         rgba[..., 3] = np.asarray(page)     # A4 : RGB noir, alpha = couverture (comme le décodage d'Azahar)
         Image.fromarray(rgba).transpose(Image.FLIP_TOP_BOTTOM).save(os.path.join(dest, fn))   # flip_png_files

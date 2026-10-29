@@ -8,18 +8,21 @@
 #               fr -> work/rom/romfs_dir_fr/Data/LINKDATA_A.BIN (tools/build_all.sh) ; autre langue : build_all.sh avec FR_LANG=<langue> écrit aussi dans
 #               romfs_dir_fr, donc le copier en work/rom/romfs_dir_<langue> avant de relancer ce script
 #   --font      police vectorielle des glyphes (défaut : Helvetica du système ; pour diffuser, une police libre : Liberation Sans, Arimo)
+#   --clean     repart de zéro (par défaut : INCRÉMENTAL — seules les textures dont le hash a changé, p. ex. une texture retraduite, sont réagrandies)
+#   --prune     supprime du pack les PNG que le jeu/les traductions actuels n'utilisent plus (anciennes versions de textures retraduites)
 #   --dry-run   ne lance pas Upscayl (compte seulement) et ne crée pas l'archive
 # Prérequis : work/venv (pillow numpy opencv-python cityhash), Upscayl dans /Applications, work/rom/romfs_dir (dump japonais extrait), dotnet pour les langues autres que fr.
 set -e
 cd "$(dirname "$0")/../.."
-OUT=work/hires_pack; LANGS=fr; LIGHT=; FONT=; DRY=
+OUT=work/hires_pack; LANGS=fr; LIGHT=; FONT=; DRY=; CLEAN=; PRUNE=
 while [ $# -gt 0 ]; do case "$1" in
-  --light) LIGHT=--light ;; --dry-run) DRY=--dry-run ;;
+  --light) LIGHT=--light ;; --dry-run) DRY=--dry-run ;; --clean) CLEAN=1 ;; --prune) PRUNE=1 ;;
   --font) FONT="--font $2"; shift ;; --langs) LANGS="$2"; shift ;; --out) OUT="$2"; shift ;;
   *) echo "option inconnue : $1"; exit 1 ;; esac; shift; done
 PY=work/venv/bin/python; [ -x $PY ] || PY=python3
 TID=000400000018B000
-[ -z "$DRY" ] && rm -rf "$OUT/$TID" "$OUT/_work"
+[ -n "$CLEAN" ] && [ -z "$DRY" ] && rm -rf "$OUT/$TID"
+mkdir -p "$OUT"; rm -rf "$OUT/_work"; : > "$OUT/expected.txt"
 
 echo "== textures du jeu japonais (G1T, G1T embarqués, BFLIM)"
 $PY tools/assets/build_hires_pack.py --out "$OUT" $LIGHT $DRY
@@ -32,6 +35,12 @@ for L in $(echo "$LANGS" | tr ',' ' '); do
   if [ "$L" = fr ]; then $PY tools/assets/build_hires_font.py --out "$OUT" $FONT; else $PY tools/assets/build_hires_font.py --out "$OUT" --bake-lang "$L" $FONT; fi
 done
 
+if [ -n "$PRUNE" ] && [ -z "$DRY" ]; then
+  ls "$OUT/$TID" | grep '\.png$' | sort > "$OUT/_present.txt"; sort -u "$OUT/expected.txt" > "$OUT/_expected.txt"
+  comm -23 "$OUT/_present.txt" "$OUT/_expected.txt" > "$OUT/_stale.txt"
+  echo "== $(wc -l < "$OUT/_stale.txt" | tr -d ' ') PNG périmés supprimés"; while read f; do rm -f "$OUT/$TID/$f"; done < "$OUT/_stale.txt"
+  rm -f "$OUT/_present.txt" "$OUT/_expected.txt" "$OUT/_stale.txt"
+fi
 [ -n "$DRY" ] && { echo "(dry-run : pas d'archive)"; exit 0; }
 cat > "$OUT/LISEZMOI.txt" <<TXT
 Pack de textures haute résolution — Yo-kai Watch Sangokushi (Azahar)

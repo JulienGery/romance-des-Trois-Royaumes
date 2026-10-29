@@ -79,6 +79,8 @@ tools/assets/make_hires_pack.sh --langs fr            # -> work/hires_pack/Yokai
 tools/assets/make_hires_pack.sh --langs fr,en --light  # variante allégée (AYN Thor) ; --font pour une police libre ; --dry-run pour compter sans lancer Upscayl
 ```
 
+Par défaut le script est **incrémental** : une texture déjà agrandie (PNG de même hash) n'est pas refaite ; après une retraduction, seules les textures modifiées (nouveau hash) passent dans Upscayl. `--prune` supprime ensuite les PNG périmés (anciennes versions des textures retraduites ; ajouter `--from-dump <dump d'Azahar>` pour conserver les textures fabriquées à l'exécution), `--clean` repart de zéro.
+
 Étapes détaillées (le script les enchaîne) :
 
 ```sh
